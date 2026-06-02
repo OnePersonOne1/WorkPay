@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# iOS/macOS native folders are NOT in this repo. The Dart code (lib/) is iOS-safe,
+# but the native folders trigger SwiftPM ephemeral ReadOnly issues on Windows.
+# To restore them on a Mac: flutter create --platforms=ios,macos .
+/ios/
+/macos/
