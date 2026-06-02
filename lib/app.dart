@@ -4,15 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/report/report_page.dart';
 import 'features/schedule/schedule_page.dart';
 import 'features/settings/settings_page.dart';
+import 'features/settings/settings_providers.dart';
 
-class SalaryApp extends StatelessWidget {
+class SalaryApp extends ConsumerWidget {
   const SalaryApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: '월급이',
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,

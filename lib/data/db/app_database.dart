@@ -30,12 +30,13 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_shifts_job_id_start_at ON shifts (job_id, start_at)',
           );
-          // AppSettings seed (id=1 강제)
+          // AppSettings seed (id=1 강제). 기본 테마는 라이트.
           final now = DateTime.now().toUtc();
           await into(appSettingsTable).insert(
             AppSettingsTableCompanion.insert(
               id: const Value(1),
               schemaVersion: kCurrentSchemaVersion,
+              themeMode: const Value('light'),
               updatedAt: now,
             ),
           );
