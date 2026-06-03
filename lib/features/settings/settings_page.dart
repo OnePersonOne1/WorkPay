@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../../domain/entity/app_settings.dart';
+import '../backup/backup_page.dart';
 import 'settings_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -20,8 +21,9 @@ class SettingsPage extends ConsumerWidget {
           children: [
             const _SectionHeader('화면'),
             _ThemeModeTile(current: settings.themeMode),
-            // 근무처 관리는 일정표 상단으로 이동.
-            // 추후: 고급 옵션 (Phase 6), 백업 (Phase 6)
+            const _SectionHeader('데이터'),
+            const _BackupTile(),
+            // 추후: 고급 옵션 (Phase 6b)
           ],
         ),
       ),
@@ -95,6 +97,25 @@ class _ThemeModeTile extends ConsumerWidget {
             settings.copyWith(themeMode: selected, updatedAt: DateTime.now().toUtc()),
           );
         }
+      },
+    );
+  }
+}
+
+class _BackupTile extends StatelessWidget {
+  const _BackupTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.cloud_off_outlined),
+      title: const Text('백업 및 복원'),
+      subtitle: const Text('JSON 파일로 내보내기 / 가져오기'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const BackupPage()),
+        );
       },
     );
   }
