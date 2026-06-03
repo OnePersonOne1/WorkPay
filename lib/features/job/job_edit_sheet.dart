@@ -126,6 +126,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   bool _dailyOvertime = false;
   bool _weeklyOvertime = false;
   bool _holidayPremium = false;
+  bool _preciseBreakInput = false;
   DeductionMode _deductionMode = DeductionMode.none;
   IncomeType _incomeType = IncomeType.partTime;
   BusinessSize _businessSize = BusinessSize.under5;
@@ -161,6 +162,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
       _dailyOvertime = opts.dailyOvertime;
       _weeklyOvertime = opts.weeklyOvertime;
       _holidayPremium = opts.holidayPremium;
+      _preciseBreakInput = opts.preciseBreakInput;
       _deductionMode = opts.deductionMode;
       _loadingOptions = false;
     });
@@ -234,6 +236,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
           dailyOvertime: _dailyOvertime,
           weeklyOvertime: _weeklyOvertime,
           holidayPremium: _holidayPremium,
+          preciseBreakInput: _preciseBreakInput,
           deductionMode: _deductionMode,
           updatedAt: now,
         ),
@@ -325,12 +328,14 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
               dailyOvertime: _dailyOvertime,
               weeklyOvertime: _weeklyOvertime,
               holidayPremium: _holidayPremium,
+              preciseBreakInput: _preciseBreakInput,
               deductionMode: _deductionMode,
               onWeekly: (v) => setState(() => _weeklyHolidayAllowance = v),
               onNight: (v) => setState(() => _nightPremium = v),
               onDailyOT: (v) => setState(() => _dailyOvertime = v),
               onWeeklyOT: (v) => setState(() => _weeklyOvertime = v),
               onHoliday: (v) => setState(() => _holidayPremium = v),
+              onPreciseBreak: (v) => setState(() => _preciseBreakInput = v),
               onDeduction: (v) => setState(() => _deductionMode = v),
             ),
             const SizedBox(height: 24),
@@ -441,12 +446,14 @@ class _AdvancedSection extends StatelessWidget {
     required this.dailyOvertime,
     required this.weeklyOvertime,
     required this.holidayPremium,
+    required this.preciseBreakInput,
     required this.deductionMode,
     required this.onWeekly,
     required this.onNight,
     required this.onDailyOT,
     required this.onWeeklyOT,
     required this.onHoliday,
+    required this.onPreciseBreak,
     required this.onDeduction,
   });
 
@@ -457,12 +464,14 @@ class _AdvancedSection extends StatelessWidget {
   final bool dailyOvertime;
   final bool weeklyOvertime;
   final bool holidayPremium;
+  final bool preciseBreakInput;
   final DeductionMode deductionMode;
   final ValueChanged<bool> onWeekly;
   final ValueChanged<bool> onNight;
   final ValueChanged<bool> onDailyOT;
   final ValueChanged<bool> onWeeklyOT;
   final ValueChanged<bool> onHoliday;
+  final ValueChanged<bool> onPreciseBreak;
   final ValueChanged<DeductionMode> onDeduction;
 
   @override
@@ -527,6 +536,14 @@ class _AdvancedSection extends StatelessWidget {
               hint: '휴일 근무에 +50%, 그 중 8시간 초과분은 +100%',
               value: holidayPremium,
               onChanged: onHoliday,
+            ),
+            const Divider(height: 24),
+            _SubSectionLabel('입력 옵션'),
+            _ToggleTile(
+              title: '정밀 휴게 입력',
+              hint: '시프트 입력 시 휴게 분뿐 아니라 휴게 시작 시각도 함께 입력해요',
+              value: preciseBreakInput,
+              onChanged: onPreciseBreak,
             ),
             const Divider(height: 24),
             _SubSectionLabel('세금·공제'),

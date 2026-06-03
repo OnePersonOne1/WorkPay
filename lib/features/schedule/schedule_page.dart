@@ -2,16 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../core/palette/job_colors.dart';
+import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
 import 'schedule_providers.dart';
+import 'shift_edit_sheet.dart';
 
 class SchedulePage extends ConsumerWidget {
   const SchedulePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final asyncJobs = ref.watch(activeJobsProvider);
+    final hasJobs = asyncJobs.maybeWhen(
+      data: (jobs) => jobs.isNotEmpty,
+      orElse: () => false,
+    );
+    final selectedDate = ref.watch(selectedDateProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('일정표'),
@@ -23,6 +33,16 @@ class SchedulePage extends ConsumerWidget {
           Expanded(child: _SelectedDayPanel()),
         ],
       ),
+      floatingActionButton: hasJobs
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.add),
+              label: const Text('시프트 추가'),
+              onPressed: () => showShiftEditSheet(
+                context,
+                defaultDate: selectedDate,
+              ),
+            )
+          : null,
     );
   }
 }
@@ -187,26 +207,44 @@ class _NoShiftsHint extends StatelessWidget {
   }
 }
 
-class _ShiftList extends StatelessWidget {
+class _ShiftList extends ConsumerWidget {
   const _ShiftList({required this.shifts});
   final List<Shift> shifts;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncJobs = ref.watch(activeJobsProvider);
+    final jobsById = asyncJobs.maybeWhen<Map<int, Job>>(
+      data: (jobs) => {for (final j in jobs) j.id: j},
+      orElse: () => const <int, Job>{},
+    );
+
     return ListView.separated(
       itemCount: shifts.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, i) {
         final s = shifts[i];
+        final job = jobsById[s.jobId];
         final start = s.startAt.toLocal();
         final end = s.endAt.toLocal();
         final timeText =
             '${_fmtHM(start)} ~ ${_fmtHM(end)}'
             '${s.breakMinutes > 0 ? ' (휴게 ${s.breakMinutes}분)' : ''}';
         return ListTile(
-          leading: const Icon(Icons.access_time),
+          leading: CircleAvatar(
+            radius: 10,
+            backgroundColor: job == null
+                ? Colors.grey
+                : JobColors.fromArgb(job.colorArgb),
+          ),
           title: Text(timeText),
-          subtitle: s.memo == null ? null : Text(s.memo!),
+          subtitle: Text(
+            [
+              if (job != null) job.name,
+              if (s.memo != null) s.memo!,
+            ].join(' · '),
+          ),
+          onTap: () => showShiftEditSheet(context, shift: s),
         );
       },
     );

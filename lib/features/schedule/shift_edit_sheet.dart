@@ -1,0 +1,583 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/palette/job_colors.dart';
+import '../../data/providers.dart';
+import '../../domain/entity/business_size.dart';
+import '../../domain/entity/income_type.dart';
+import '../../domain/entity/job.dart';
+import '../../domain/entity/shift.dart';
+import '../job/job_providers.dart';
+
+/// 시프트 생성/편집 modal sheet.
+/// [shift]이 null이면 생성, 아니면 편집. [defaultDate]는 새 시프트의 기본 시작 날짜.
+Future<bool?> showShiftEditSheet(
+  BuildContext context, {
+  Shift? shift,
+  DateTime? defaultDate,
+}) {
+  return showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+      child: _ShiftEditSheet(initial: shift, defaultDate: defaultDate),
+    ),
+  );
+}
+
+class _ShiftEditSheet extends ConsumerStatefulWidget {
+  const _ShiftEditSheet({this.initial, this.defaultDate});
+  final Shift? initial;
+  final DateTime? defaultDate;
+
+  @override
+  ConsumerState<_ShiftEditSheet> createState() => _ShiftEditSheetState();
+}
+
+class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _breakCtrl;
+  late final TextEditingController _memoCtrl;
+
+  Job? _selectedJob;
+  late DateTime _startAt;
+  late DateTime _endAt;
+  DateTime? _breakStartAt;
+  bool _saving = false;
+  bool _deleting = false;
+  bool _preciseBreak = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.initial;
+    if (s != null) {
+      _startAt = s.startAt.toLocal();
+      _endAt = s.endAt.toLocal();
+      _breakStartAt = s.breakStartAt?.toLocal();
+      _breakCtrl = TextEditingController(text: s.breakMinutes.toString());
+      _memoCtrl = TextEditingController(text: s.memo ?? '');
+      // job + options는 build에서 watch
+    } else {
+      final base = widget.defaultDate ?? DateTime.now();
+      final day = DateTime(base.year, base.month, base.day);
+      _startAt = day.add(const Duration(hours: 9));
+      _endAt = day.add(const Duration(hours: 18));
+      _breakCtrl = TextEditingController(text: '0');
+      _memoCtrl = TextEditingController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _breakCtrl.dispose();
+    _memoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate(bool isStart) async {
+    final base = isStart ? _startAt : _endAt;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: base,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2099),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isStart) {
+        _startAt = DateTime(
+          picked.year, picked.month, picked.day,
+          _startAt.hour, _startAt.minute,
+        );
+        // 종료가 시작보다 앞이면 자동으로 +9시간으로 보정
+        if (!_endAt.isAfter(_startAt)) {
+          _endAt = _startAt.add(const Duration(hours: 9));
+        }
+      } else {
+        _endAt = DateTime(
+          picked.year, picked.month, picked.day,
+          _endAt.hour, _endAt.minute,
+        );
+      }
+    });
+  }
+
+  Future<void> _pickTime(bool isStart) async {
+    final base = isStart ? _startAt : _endAt;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: base.hour, minute: base.minute),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isStart) {
+        _startAt = DateTime(
+          _startAt.year, _startAt.month, _startAt.day,
+          picked.hour, picked.minute,
+        );
+        if (!_endAt.isAfter(_startAt)) {
+          _endAt = _startAt.add(const Duration(hours: 9));
+        }
+      } else {
+        _endAt = DateTime(
+          _endAt.year, _endAt.month, _endAt.day,
+          picked.hour, picked.minute,
+        );
+      }
+    });
+  }
+
+  Future<void> _pickBreakStart() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: _breakStartAt?.hour ?? 12,
+        minute: _breakStartAt?.minute ?? 0,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      final base = _breakStartAt ?? _startAt;
+      _breakStartAt = DateTime(
+        base.year, base.month, base.day, picked.hour, picked.minute,
+      );
+    });
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    final job = _selectedJob;
+    if (job == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('근무처를 선택하세요')),
+      );
+      return;
+    }
+    if (!_endAt.isAfter(_startAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('종료가 시작보다 뒤여야 합니다')),
+      );
+      return;
+    }
+    final totalMinutes = _endAt.difference(_startAt).inMinutes;
+    final breakMinutes = int.parse(_breakCtrl.text.trim());
+    if (breakMinutes >= totalMinutes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('휴게 시간이 근무 시간보다 깁니다')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    final repo = ref.read(shiftRepositoryProvider);
+    final memo = _memoCtrl.text.trim().isEmpty ? null : _memoCtrl.text.trim();
+    try {
+      if (widget.initial == null) {
+        await repo.create(
+          jobId: job.id,
+          startAt: _startAt,
+          endAt: _endAt,
+          breakMinutes: breakMinutes,
+          breakStartAt: _preciseBreak ? _breakStartAt : null,
+          memo: memo,
+        );
+      } else {
+        await repo.update(
+          widget.initial!.copyWith(
+            jobId: job.id,
+            startAt: _startAt.toUtc(),
+            endAt: _endAt.toUtc(),
+            breakMinutes: breakMinutes,
+            breakStartAt: _preciseBreak ? _breakStartAt?.toUtc() : null,
+            clearBreakStartAt: !_preciseBreak,
+            memo: memo,
+            clearMemo: memo == null,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _delete() async {
+    final initial = widget.initial;
+    if (initial == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('시프트 삭제'),
+        content: const Text('이 시프트를 삭제할까요? 되돌릴 수 없어요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    setState(() => _deleting = true);
+    try {
+      await ref.read(shiftRepositoryProvider).delete(initial.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _deleting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 실패: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.initial != null;
+    final asyncJobs = ref.watch(activeJobsProvider);
+
+    return asyncJobs.when(
+      loading: () => const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => SizedBox(
+        height: 200,
+        child: Center(child: Text('근무처 로드 오류: $e')),
+      ),
+      data: (jobs) {
+        // 초기 Job 선택 + 옵션 로드
+        if (_selectedJob == null) {
+          final initialJobId = widget.initial?.jobId;
+          _selectedJob = initialJobId == null
+              ? (jobs.isNotEmpty ? jobs.first : null)
+              : jobs.firstWhere(
+                  (j) => j.id == initialJobId,
+                  orElse: () => jobs.isNotEmpty ? jobs.first : _placeholderJob(),
+                );
+        }
+        if (jobs.isEmpty || _selectedJob == null) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: Text('근무처가 없어서 시프트를 추가할 수 없어요.')),
+          );
+        }
+        return _buildForm(context, jobs, isEdit);
+      },
+    );
+  }
+
+  /// jobs가 비어있을 때만 잠깐 쓰이는 fallback. 실제로는 위 가드로 도달 안 됨.
+  Job _placeholderJob() => Job(
+        id: -1,
+        name: '',
+        hourlyWage: 0,
+        incomeType: IncomeType.partTime,
+        businessSize: BusinessSize.under5,
+        colorArgb: 0,
+        archived: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+  Widget _buildForm(BuildContext context, List<Job> jobs, bool isEdit) {
+    final scheme = Theme.of(context).colorScheme;
+    final selectedJob = _selectedJob!;
+    final totalMinutes = _endAt.isAfter(_startAt)
+        ? _endAt.difference(_startAt).inMinutes
+        : 0;
+    final breakMin = int.tryParse(_breakCtrl.text.trim()) ?? 0;
+    final workMin = (totalMinutes - breakMin).clamp(0, 1 << 30);
+
+    // 선택된 Job의 preciseBreakInput 옵션 비동기 로드
+    final optsAsync = ref.watch(_optionsForJobProvider(selectedJob.id));
+    optsAsync.whenData((opts) {
+      if (_preciseBreak != opts.preciseBreakInput) {
+        // 빌드 중 setState는 위험 — postFrame 사용
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() => _preciseBreak = opts.preciseBreakInput);
+          }
+        });
+      }
+    });
+
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                isEdit ? '시프트 편집' : '시프트 추가',
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            // 근무처 선택
+            DropdownButtonFormField<Job>(
+              initialValue: selectedJob,
+              decoration: const InputDecoration(
+                labelText: '근무처',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (final j in jobs)
+                  DropdownMenuItem(
+                    value: j,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 8,
+                          backgroundColor: JobColors.fromArgb(j.colorArgb),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(j.name),
+                      ],
+                    ),
+                  ),
+              ],
+              onChanged: (j) => setState(() => _selectedJob = j),
+            ),
+            const SizedBox(height: 16),
+            _DateTimeRow(
+              label: '시작',
+              date: _startAt,
+              onPickDate: () => _pickDate(true),
+              onPickTime: () => _pickTime(true),
+            ),
+            const SizedBox(height: 8),
+            _DateTimeRow(
+              label: '종료',
+              date: _endAt,
+              onPickDate: () => _pickDate(false),
+              onPickTime: () => _pickTime(false),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _breakCtrl,
+              decoration: const InputDecoration(
+                labelText: '휴게 시간',
+                suffixText: '분',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: false),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() {}),
+              validator: (v) {
+                final t = v?.trim() ?? '';
+                if (t.isEmpty) return '0 이상 입력';
+                final n = int.tryParse(t);
+                if (n == null) return '숫자만 입력';
+                if (n < 0) return '0 이상';
+                return null;
+              },
+            ),
+            if (_preciseBreak) ...[
+              const SizedBox(height: 8),
+              _BreakStartRow(
+                value: _breakStartAt,
+                onPick: _pickBreakStart,
+                onClear: () => setState(() => _breakStartAt = null),
+              ),
+            ],
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _memoCtrl,
+              decoration: const InputDecoration(
+                labelText: '메모 (선택)',
+                border: OutlineInputBorder(),
+              ),
+              maxLength: 120,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Text('실 근무 시간: ${_formatDuration(workMin)}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                if (isEdit)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _deleting || _saving ? null : _delete,
+                      icon: const Icon(Icons.delete_outline),
+                      label: _deleting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('삭제'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: scheme.error,
+                      ),
+                    ),
+                  ),
+                if (isEdit) const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: _saving || _deleting ? null : _save,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(isEdit ? '저장' : '추가'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (h == 0) return '$m분';
+    if (m == 0) return '$h시간';
+    return '$h시간 $m분';
+  }
+}
+
+class _DateTimeRow extends StatelessWidget {
+  const _DateTimeRow({
+    required this.label,
+    required this.date,
+    required this.onPickDate,
+    required this.onPickTime,
+  });
+  final String label;
+  final DateTime date;
+  final VoidCallback onPickDate;
+  final VoidCallback onPickTime;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateText = '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    final timeText = '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+    return Row(
+      children: [
+        SizedBox(
+          width: 40,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.calendar_today_outlined, size: 16),
+            label: Text(dateText),
+            onPressed: onPickDate,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 2,
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.access_time, size: 16),
+            label: Text(timeText),
+            onPressed: onPickTime,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BreakStartRow extends StatelessWidget {
+  const _BreakStartRow({
+    required this.value,
+    required this.onPick,
+    required this.onClear,
+  });
+  final DateTime? value;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = value == null
+        ? '휴게 시작 시각 선택'
+        : '휴게 시작 ${value!.hour.toString().padLeft(2, '0')}:${value!.minute.toString().padLeft(2, '0')}';
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.free_breakfast_outlined, size: 16),
+            label: Text(text),
+            onPressed: onPick,
+          ),
+        ),
+        if (value != null)
+          IconButton(
+            icon: Icon(Icons.close, color: scheme.onSurfaceVariant),
+            onPressed: onClear,
+          ),
+      ],
+    );
+  }
+}
+
+/// Job별 옵션을 stream으로 가져오는 family provider.
+/// shift sheet에서 preciseBreakInput을 보기 위해 사용.
+final _optionsForJobProvider =
+    StreamProvider.family<_JobOptsLite, int>((ref, jobId) {
+  return ref.watch(jobRepositoryProvider).watchOptions(jobId).map(
+        (o) => _JobOptsLite(preciseBreakInput: o.preciseBreakInput),
+      );
+});
+
+class _JobOptsLite {
+  const _JobOptsLite({required this.preciseBreakInput});
+  final bool preciseBreakInput;
+}
