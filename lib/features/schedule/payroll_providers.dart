@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
+import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../../domain/payroll/holiday_calendar.dart';
 import '../../domain/payroll/monthly_computation.dart';
 import '../../domain/payroll/payroll_constants.dart';
 import '../../domain/payroll/payroll_engine.dart';
 import '../job/job_providers.dart';
+import 'monthly_report_bundle.dart';
 import 'schedule_providers.dart';
 
 /// 앱 전역 PayrollConstants. 향후 '고고급 설정' UI에서 override 시 이곳을 갈아끼우면 된다.
@@ -26,26 +28,26 @@ final payrollEngineProvider = Provider<PayrollEngine>((ref) {
   );
 });
 
-/// 선택된 월의 모든 활성 근무처를 합산한 MonthlyComputation.
+/// 선택된 월의 전체+근무처별 계산 묶음.
 ///
 /// shifts + jobs stream을 모두 watch하므로 새 시프트 추가/편집/삭제, 근무처 옵션 변경 시
 /// 자동으로 재계산된다.
-final monthlyComputationProvider = FutureProvider<MonthlyComputation>((ref) async {
+final monthlyReportBundleProvider =
+    FutureProvider<MonthlyReportBundle>((ref) async {
   final month = ref.watch(selectedMonthProvider);
   final engine = ref.watch(payrollEngineProvider);
   final jobRepo = ref.watch(jobRepositoryProvider);
 
-  // shifts/jobs stream의 future를 watch — 새 emission마다 이 provider 재실행
   final allShifts = await ref.watch(shiftsInSelectedMonthProvider.future);
   final jobs = await ref.watch(activeJobsProvider.future);
 
-  // 시프트를 jobId 별로 그룹핑
   final byJob = <int, List<Shift>>{};
   for (final s in allShifts) {
     byJob.putIfAbsent(s.jobId, () => []).add(s);
   }
 
   var combined = MonthlyComputation.empty(month.year, month.month);
+  final perJob = <({Job job, MonthlyComputation computation})>[];
   for (final job in jobs) {
     final jobShifts = byJob[job.id] ?? const <Shift>[];
     if (jobShifts.isEmpty) continue;
@@ -56,8 +58,14 @@ final monthlyComputationProvider = FutureProvider<MonthlyComputation>((ref) asyn
       shifts: jobShifts,
       options: opts,
     );
+    perJob.add((job: job, computation: comp));
     combined = combined.merge(comp);
   }
 
-  return combined;
+  return MonthlyReportBundle(combined: combined, perJob: perJob);
+});
+
+/// 캘린더가 사용하는 기존 인터페이스 — bundle.combined만 노출.
+final monthlyComputationProvider = Provider<AsyncValue<MonthlyComputation>>((ref) {
+  return ref.watch(monthlyReportBundleProvider).whenData((b) => b.combined);
 });

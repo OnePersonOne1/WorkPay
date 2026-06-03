@@ -10,6 +10,7 @@ import '../../domain/entity/shift.dart';
 import '../job/job_edit_sheet.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
+import 'monthly_report_detail_page.dart';
 import 'payroll_providers.dart';
 import 'recurring_shift_sheet.dart';
 import 'schedule_providers.dart';
@@ -37,6 +38,11 @@ class SchedulePage extends ConsumerWidget {
               icon: const Icon(Icons.event_repeat),
               onPressed: () => showRecurringShiftSheet(context),
             ),
+          IconButton(
+            tooltip: '월별 급여 명세',
+            icon: const Icon(Icons.receipt_long_outlined),
+            onPressed: () => pushMonthlyReportDetail(context),
+          ),
         ],
       ),
       body: const Column(
@@ -434,28 +440,45 @@ class _MonthlySummary extends ConsumerWidget {
         final net = c.report.netPay;
         final gross = c.report.grossPay;
         final f = NumberFormat.decimalPattern('ko_KR');
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+        return Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '이 달 ${_h(minutes)}h · ${f.format(net.won)}원',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+          child: InkWell(
+            onTap: () => pushMonthlyReportDetail(context),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 12, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '이 달 ${_h(minutes)}h · ${f.format(net.won)}원',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        if (gross.won != net.won)
+                          Text(
+                            '공제 전 ${f.format(gross.won)}원',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
                     ),
-              ),
-              if (gross.won != net.won)
-                Text(
-                  '공제 전 ${f.format(gross.won)}원',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
                   ),
-                ),
-            ],
+                  Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
