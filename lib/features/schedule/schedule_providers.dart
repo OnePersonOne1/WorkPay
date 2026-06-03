@@ -57,3 +57,42 @@ final shiftsOnSelectedDateProvider = Provider<List<Shift>>((ref) {
   );
 });
 
+/// 캘린더에 어떤 급여를 표시할지 토글. 모두 OFF도 가능.
+/// 기본값: 월급만 ON.
+class PayrollVisibility {
+  const PayrollVisibility({
+    required this.daily,
+    required this.weekly,
+    required this.monthly,
+  });
+
+  factory PayrollVisibility.defaults() =>
+      const PayrollVisibility(daily: false, weekly: false, monthly: true);
+
+  final bool daily;
+  final bool weekly;
+  final bool monthly;
+
+  PayrollVisibility copyWith({bool? daily, bool? weekly, bool? monthly}) {
+    return PayrollVisibility(
+      daily: daily ?? this.daily,
+      weekly: weekly ?? this.weekly,
+      monthly: monthly ?? this.monthly,
+    );
+  }
+}
+
+class PayrollVisibilityNotifier extends Notifier<PayrollVisibility> {
+  @override
+  PayrollVisibility build() => PayrollVisibility.defaults();
+
+  void toggleDaily() => state = state.copyWith(daily: !state.daily);
+  void toggleWeekly() => state = state.copyWith(weekly: !state.weekly);
+  void toggleMonthly() => state = state.copyWith(monthly: !state.monthly);
+}
+
+final payrollVisibilityProvider =
+    NotifierProvider<PayrollVisibilityNotifier, PayrollVisibility>(
+  PayrollVisibilityNotifier.new,
+);
+

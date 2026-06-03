@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'features/report/report_page.dart';
 import 'features/schedule/schedule_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/settings/settings_providers.dart';
@@ -44,7 +43,6 @@ class _RootShellState extends ConsumerState<_RootShell> {
 
   static const _pages = <Widget>[
     SchedulePage(),
-    ReportPage(),
     SettingsPage(),
   ];
 
@@ -63,11 +61,6 @@ class _RootShellState extends ConsumerState<_RootShell> {
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
             label: '일정표',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.payments_outlined),
-            selectedIcon: Icon(Icons.payments),
-            label: '월급',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),

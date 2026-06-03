@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../../domain/entity/app_settings.dart';
-import '../job/job_providers.dart';
-import '../job/jobs_page.dart';
 import 'settings_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -22,9 +20,8 @@ class SettingsPage extends ConsumerWidget {
           children: [
             const _SectionHeader('화면'),
             _ThemeModeTile(current: settings.themeMode),
-            const _SectionHeader('근무처'),
-            const _JobsTile(),
-            // 추후: 고급 옵션 (Phase 6)
+            // 근무처 관리는 일정표 상단으로 이동.
+            // 추후: 고급 옵션 (Phase 6), 백업 (Phase 6)
           ],
         ),
       ),
@@ -98,30 +95,6 @@ class _ThemeModeTile extends ConsumerWidget {
             settings.copyWith(themeMode: selected, updatedAt: DateTime.now().toUtc()),
           );
         }
-      },
-    );
-  }
-}
-
-class _JobsTile extends ConsumerWidget {
-  const _JobsTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncJobs = ref.watch(activeJobsProvider);
-    final count = asyncJobs.maybeWhen(
-      data: (jobs) => jobs.length,
-      orElse: () => null,
-    );
-    return ListTile(
-      leading: const Icon(Icons.work_outline),
-      title: const Text('근무처 관리'),
-      subtitle: Text(count == null ? '로드 중…' : '활성 $count개'),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const JobsPage()),
-        );
       },
     );
   }
