@@ -11,6 +11,7 @@ import '../job/job_edit_sheet.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
 import 'payroll_providers.dart';
+import 'recurring_shift_sheet.dart';
 import 'schedule_providers.dart';
 import 'shift_edit_sheet.dart';
 
@@ -27,7 +28,17 @@ class SchedulePage extends ConsumerWidget {
     final selectedDate = ref.watch(selectedDateProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('일정표')),
+      appBar: AppBar(
+        title: const Text('일정표'),
+        actions: [
+          if (hasJobs)
+            IconButton(
+              tooltip: '반복 시프트 일괄 추가',
+              icon: const Icon(Icons.event_repeat),
+              onPressed: () => showRecurringShiftSheet(context),
+            ),
+        ],
+      ),
       body: const Column(
         children: [
           _JobsBar(),

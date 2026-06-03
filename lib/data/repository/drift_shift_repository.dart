@@ -55,6 +55,28 @@ class DriftShiftRepository implements ShiftRepository {
   }
 
   @override
+  Future<List<ent.Shift>> createBulk({
+    required int jobId,
+    required List<BulkShiftDraft> drafts,
+  }) async {
+    final rows = await _dao.createBulk(
+      jobId: jobId,
+      drafts: [
+        for (final d in drafts)
+          (
+            startAt: d.startAt,
+            endAt: d.endAt,
+            breakMinutes: d.breakMinutes,
+            breakStartAt: d.breakStartAt,
+            memo: d.memo,
+          ),
+      ],
+      now: _clock(),
+    );
+    return rows.map((r) => r.toEntity()).toList();
+  }
+
+  @override
   Future<void> update(ent.Shift shift) {
     return _dao.updateShift(
       shift.id,

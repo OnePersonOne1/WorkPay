@@ -67,6 +67,40 @@ class ShiftDao extends DatabaseAccessor<AppDatabase> with _$ShiftDaoMixin {
     });
   }
 
+  /// N개 시프트를 한 트랜잭션으로 생성. 같은 jobId, 같은 wage snapshot.
+  Future<List<Shift>> createBulk({
+    required int jobId,
+    required List<({DateTime startAt, DateTime endAt, int breakMinutes,
+        DateTime? breakStartAt, String? memo})> drafts,
+    required DateTime now,
+  }) {
+    return transaction(() async {
+      final job = await (select(jobs)..where((j) => j.id.equals(jobId)))
+          .getSingleOrNull();
+      if (job == null) {
+        throw StateError('Job not found: $jobId');
+      }
+      final out = <Shift>[];
+      for (final d in drafts) {
+        final row = await into(shifts).insertReturning(
+          ShiftsCompanion.insert(
+            jobId: jobId,
+            startAt: d.startAt.toUtc(),
+            endAt: d.endAt.toUtc(),
+            breakMinutes: Value(d.breakMinutes),
+            breakStartAt: Value(d.breakStartAt?.toUtc()),
+            hourlyWageSnapshot: job.hourlyWage,
+            memo: Value(d.memo),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        out.add(row);
+      }
+      return out;
+    });
+  }
+
   Future<void> updateShift(int id, ShiftsCompanion shift) {
     return (update(shifts)..where((s) => s.id.equals(id))).write(shift);
   }
