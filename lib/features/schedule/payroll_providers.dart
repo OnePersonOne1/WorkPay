@@ -66,6 +66,8 @@ final monthlyReportBundleProvider =
 });
 
 /// 캘린더가 사용하는 기존 인터페이스 — bundle.combined만 노출.
-final monthlyComputationProvider = Provider<AsyncValue<MonthlyComputation>>((ref) {
-  return ref.watch(monthlyReportBundleProvider).whenData((b) => b.combined);
+/// FutureProvider로 유지해 핫리로드 시 ProviderContainer 타입 충돌 회피.
+final monthlyComputationProvider = FutureProvider<MonthlyComputation>((ref) async {
+  final bundle = await ref.watch(monthlyReportBundleProvider.future);
+  return bundle.combined;
 });
