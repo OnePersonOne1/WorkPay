@@ -1888,6 +1888,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _payrollConstantsJsonMeta =
+      const VerificationMeta('payrollConstantsJson');
+  @override
+  late final GeneratedColumn<String> payrollConstantsJson =
+      GeneratedColumn<String>(
+        'payroll_constants_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1906,6 +1917,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     themeMode,
     locale,
     lastBackupAt,
+    payrollConstantsJson,
     updatedAt,
   ];
   @override
@@ -1955,6 +1967,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('payroll_constants_json')) {
+      context.handle(
+        _payrollConstantsJsonMeta,
+        payrollConstantsJson.isAcceptableOrUnknown(
+          data['payroll_constants_json']!,
+          _payrollConstantsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1992,6 +2013,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_backup_at'],
       ),
+      payrollConstantsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payroll_constants_json'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2013,6 +2038,10 @@ class AppSettingsTableData extends DataClass
   final String themeMode;
   final String locale;
   final DateTime? lastBackupAt;
+
+  /// '고고급 설정'에서 사용자가 override한 PayrollConstants 직렬화 JSON.
+  /// NULL이면 koreanDefault() 사용.
+  final String? payrollConstantsJson;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2020,6 +2049,7 @@ class AppSettingsTableData extends DataClass
     required this.themeMode,
     required this.locale,
     this.lastBackupAt,
+    this.payrollConstantsJson,
     required this.updatedAt,
   });
   @override
@@ -2031,6 +2061,9 @@ class AppSettingsTableData extends DataClass
     map['locale'] = Variable<String>(locale);
     if (!nullToAbsent || lastBackupAt != null) {
       map['last_backup_at'] = Variable<DateTime>(lastBackupAt);
+    }
+    if (!nullToAbsent || payrollConstantsJson != null) {
+      map['payroll_constants_json'] = Variable<String>(payrollConstantsJson);
     }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2045,6 +2078,9 @@ class AppSettingsTableData extends DataClass
       lastBackupAt: lastBackupAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastBackupAt),
+      payrollConstantsJson: payrollConstantsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payrollConstantsJson),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2060,6 +2096,9 @@ class AppSettingsTableData extends DataClass
       themeMode: serializer.fromJson<String>(json['themeMode']),
       locale: serializer.fromJson<String>(json['locale']),
       lastBackupAt: serializer.fromJson<DateTime?>(json['lastBackupAt']),
+      payrollConstantsJson: serializer.fromJson<String?>(
+        json['payrollConstantsJson'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2072,6 +2111,7 @@ class AppSettingsTableData extends DataClass
       'themeMode': serializer.toJson<String>(themeMode),
       'locale': serializer.toJson<String>(locale),
       'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
+      'payrollConstantsJson': serializer.toJson<String?>(payrollConstantsJson),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2082,6 +2122,7 @@ class AppSettingsTableData extends DataClass
     String? themeMode,
     String? locale,
     Value<DateTime?> lastBackupAt = const Value.absent(),
+    Value<String?> payrollConstantsJson = const Value.absent(),
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2089,6 +2130,9 @@ class AppSettingsTableData extends DataClass
     themeMode: themeMode ?? this.themeMode,
     locale: locale ?? this.locale,
     lastBackupAt: lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
+    payrollConstantsJson: payrollConstantsJson.present
+        ? payrollConstantsJson.value
+        : this.payrollConstantsJson,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2102,6 +2146,9 @@ class AppSettingsTableData extends DataClass
       lastBackupAt: data.lastBackupAt.present
           ? data.lastBackupAt.value
           : this.lastBackupAt,
+      payrollConstantsJson: data.payrollConstantsJson.present
+          ? data.payrollConstantsJson.value
+          : this.payrollConstantsJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2114,6 +2161,7 @@ class AppSettingsTableData extends DataClass
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2126,6 +2174,7 @@ class AppSettingsTableData extends DataClass
     themeMode,
     locale,
     lastBackupAt,
+    payrollConstantsJson,
     updatedAt,
   );
   @override
@@ -2137,6 +2186,7 @@ class AppSettingsTableData extends DataClass
           other.themeMode == this.themeMode &&
           other.locale == this.locale &&
           other.lastBackupAt == this.lastBackupAt &&
+          other.payrollConstantsJson == this.payrollConstantsJson &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2146,6 +2196,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<String> themeMode;
   final Value<String> locale;
   final Value<DateTime?> lastBackupAt;
+  final Value<String?> payrollConstantsJson;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2153,6 +2204,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.payrollConstantsJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2161,6 +2213,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.payrollConstantsJson = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2170,6 +2223,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<String>? themeMode,
     Expression<String>? locale,
     Expression<DateTime>? lastBackupAt,
+    Expression<String>? payrollConstantsJson,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2178,6 +2232,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       if (themeMode != null) 'theme_mode': themeMode,
       if (locale != null) 'locale': locale,
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
+      if (payrollConstantsJson != null)
+        'payroll_constants_json': payrollConstantsJson,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2188,6 +2244,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<String>? themeMode,
     Value<String>? locale,
     Value<DateTime?>? lastBackupAt,
+    Value<String?>? payrollConstantsJson,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2196,6 +2253,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      payrollConstantsJson: payrollConstantsJson ?? this.payrollConstantsJson,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2218,6 +2276,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     if (lastBackupAt.present) {
       map['last_backup_at'] = Variable<DateTime>(lastBackupAt.value);
     }
+    if (payrollConstantsJson.present) {
+      map['payroll_constants_json'] = Variable<String>(
+        payrollConstantsJson.value,
+      );
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2232,6 +2295,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -3612,6 +3676,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String> themeMode,
       Value<String> locale,
       Value<DateTime?> lastBackupAt,
+      Value<String?> payrollConstantsJson,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -3621,6 +3686,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String> themeMode,
       Value<String> locale,
       Value<DateTime?> lastBackupAt,
+      Value<String?> payrollConstantsJson,
       Value<DateTime> updatedAt,
     });
 
@@ -3655,6 +3721,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<DateTime> get lastBackupAt => $composableBuilder(
     column: $table.lastBackupAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payrollConstantsJson => $composableBuilder(
+    column: $table.payrollConstantsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3698,6 +3769,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get payrollConstantsJson => $composableBuilder(
+    column: $table.payrollConstantsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3729,6 +3805,11 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastBackupAt => $composableBuilder(
     column: $table.lastBackupAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payrollConstantsJson => $composableBuilder(
+    column: $table.payrollConstantsJson,
     builder: (column) => column,
   );
 
@@ -3778,6 +3859,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
+                Value<String?> payrollConstantsJson = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -3785,6 +3867,7 @@ class $$AppSettingsTableTableTableManager
                 themeMode: themeMode,
                 locale: locale,
                 lastBackupAt: lastBackupAt,
+                payrollConstantsJson: payrollConstantsJson,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -3794,6 +3877,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
+                Value<String?> payrollConstantsJson = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -3801,6 +3885,7 @@ class $$AppSettingsTableTableTableManager
                 themeMode: themeMode,
                 locale: locale,
                 lastBackupAt: lastBackupAt,
+                payrollConstantsJson: payrollConstantsJson,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

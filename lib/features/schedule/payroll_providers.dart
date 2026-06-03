@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
@@ -8,12 +10,28 @@ import '../../domain/payroll/monthly_computation.dart';
 import '../../domain/payroll/payroll_constants.dart';
 import '../../domain/payroll/payroll_engine.dart';
 import '../job/job_providers.dart';
+import '../settings/settings_providers.dart';
 import 'monthly_report_bundle.dart';
 import 'schedule_providers.dart';
 
-/// 앱 전역 PayrollConstants. 향후 '고고급 설정' UI에서 override 시 이곳을 갈아끼우면 된다.
+/// 앱 전역 PayrollConstants. AppSettings.payrollConstantsJson이 있으면 그걸 사용,
+/// 없거나 파싱 실패면 koreanDefault().
 final payrollConstantsProvider = Provider<PayrollConstants>((ref) {
-  return PayrollConstants.koreanDefault();
+  final async = ref.watch(appSettingsProvider);
+  return async.maybeWhen(
+    data: (s) {
+      final raw = s.payrollConstantsJson;
+      if (raw == null || raw.isEmpty) return PayrollConstants.koreanDefault();
+      try {
+        return PayrollConstants.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        return PayrollConstants.koreanDefault();
+      }
+    },
+    orElse: () => PayrollConstants.koreanDefault(),
+  );
 });
 
 /// 한국 공휴일 캘린더. 향후 패키지 교체 시 이 provider만 갈아끼움.

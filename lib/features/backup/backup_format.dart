@@ -225,6 +225,7 @@ class AppSettingsJson {
     required this.themeMode,
     required this.locale,
     required this.lastBackupAt,
+    required this.payrollConstantsJson,
     required this.updatedAt,
   });
 
@@ -232,6 +233,7 @@ class AppSettingsJson {
   final ThemeModeSetting themeMode;
   final String locale;
   final DateTime? lastBackupAt;
+  final String? payrollConstantsJson;
   final DateTime updatedAt;
 
   Map<String, dynamic> toJson() => {
@@ -240,6 +242,8 @@ class AppSettingsJson {
         'locale': locale,
         if (lastBackupAt != null)
           'lastBackupAt': lastBackupAt!.toUtc().toIso8601String(),
+        if (payrollConstantsJson != null)
+          'payrollConstantsJson': payrollConstantsJson,
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
 
@@ -252,6 +256,7 @@ class AppSettingsJson {
         lastBackupAt: json['lastBackupAt'] == null
             ? null
             : DateTime.parse(json['lastBackupAt'] as String),
+        payrollConstantsJson: json['payrollConstantsJson'] as String?,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );
 }

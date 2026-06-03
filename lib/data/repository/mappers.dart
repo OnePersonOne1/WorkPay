@@ -60,6 +60,7 @@ extension AppSettingsRowToEntity on db.AppSettingsTableData {
         themeMode: _decodeThemeMode(themeMode),
         locale: locale,
         lastBackupAt: lastBackupAt,
+        payrollConstantsJson: payrollConstantsJson,
         updatedAt: updatedAt,
       );
 }
@@ -71,6 +72,7 @@ extension AppSettingsEntityToCompanion on ent.AppSettings {
         themeMode: Value(themeMode.name),
         locale: Value(locale),
         lastBackupAt: Value(lastBackupAt),
+        payrollConstantsJson: Value(payrollConstantsJson),
         updatedAt: Value(updatedAt),
       );
 }

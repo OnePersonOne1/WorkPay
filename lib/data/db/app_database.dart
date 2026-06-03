@@ -7,7 +7,7 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-const int kCurrentSchemaVersion = 1;
+const int kCurrentSchemaVersion = 2;
 
 @DriftDatabase(
   tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable],
@@ -21,6 +21,15 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // v2: app_settings에 payrollConstantsJson 컬럼 추가
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.payrollConstantsJson,
+            );
+          }
+        },
         onCreate: (m) async {
           await m.createAll();
           // 인덱스: 월간 시프트 조회 최적화

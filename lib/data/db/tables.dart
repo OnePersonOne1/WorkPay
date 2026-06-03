@@ -57,6 +57,11 @@ class AppSettingsTable extends Table {
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
   TextColumn get locale => text().withDefault(const Constant('ko'))();
   DateTimeColumn get lastBackupAt => dateTime().nullable()();
+
+  /// '고고급 설정'에서 사용자가 override한 PayrollConstants 직렬화 JSON.
+  /// NULL이면 koreanDefault() 사용.
+  TextColumn get payrollConstantsJson => text().nullable()();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

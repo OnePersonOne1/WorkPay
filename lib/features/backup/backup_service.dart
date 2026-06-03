@@ -94,6 +94,7 @@ class BackupService {
         themeMode: ThemeModeSetting.values.byName(settings.themeMode),
         locale: settings.locale,
         lastBackupAt: settings.lastBackupAt,
+        payrollConstantsJson: settings.payrollConstantsJson,
         updatedAt: settings.updatedAt,
       ),
     );
@@ -184,6 +185,7 @@ class BackupService {
           themeMode: Value(data.appSettings.themeMode.name),
           locale: Value(data.appSettings.locale),
           lastBackupAt: Value(data.appSettings.lastBackupAt),
+          payrollConstantsJson: Value(data.appSettings.payrollConstantsJson),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );
@@ -197,13 +199,8 @@ class BackupService {
 
   /// AppSettings에 lastBackupAt 기록.
   Future<void> markBackedUp(DateTime at) async {
-    final settings = await _db.appSettingsDao.read();
     await _db.appSettingsDao.save(
       AppSettingsTableCompanion(
-        id: const Value(1),
-        schemaVersion: Value(settings.schemaVersion),
-        themeMode: Value(settings.themeMode),
-        locale: Value(settings.locale),
         lastBackupAt: Value(at),
         updatedAt: Value(DateTime.now().toUtc()),
       ),

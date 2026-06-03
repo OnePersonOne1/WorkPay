@@ -73,6 +73,63 @@ class PayrollConstants {
   /// 일요일을 휴일로 취급할지. 기본 true (주휴일 관례).
   final bool sundayIsHoliday;
 
+  Map<String, dynamic> toJson() => {
+        'nightStartMinuteOfDay': nightStartMinuteOfDay,
+        'nightEndMinuteOfDay': nightEndMinuteOfDay,
+        'dailyOvertimeThresholdMinutes': dailyOvertimeThresholdMinutes,
+        'weeklyOvertimeThresholdMinutes': weeklyOvertimeThresholdMinutes,
+        'weeklyHolidayThresholdMinutes': weeklyHolidayThresholdMinutes,
+        'nightPremiumRateBp': nightPremiumRateBp,
+        'dailyOvertimePremiumRateBp': dailyOvertimePremiumRateBp,
+        'weeklyOvertimePremiumRateBp': weeklyOvertimePremiumRateBp,
+        'holidayPremiumWithinDailyThresholdRateBp':
+            holidayPremiumWithinDailyThresholdRateBp,
+        'holidayPremiumOverDailyThresholdRateBp':
+            holidayPremiumOverDailyThresholdRateBp,
+        'businessIncomeWithholdingRateBp': businessIncomeWithholdingRateBp,
+        'weekStartsOn': weekStartsOn,
+        'sundayIsHoliday': sundayIsHoliday,
+      };
+
+  /// 누락된 필드는 koreanDefault 값을 그대로 사용 — 향후 새 필드 추가 시 호환.
+  factory PayrollConstants.fromJson(Map<String, dynamic> json) {
+    final d = PayrollConstants.koreanDefault();
+    return PayrollConstants(
+      nightStartMinuteOfDay:
+          json['nightStartMinuteOfDay'] as int? ?? d.nightStartMinuteOfDay,
+      nightEndMinuteOfDay:
+          json['nightEndMinuteOfDay'] as int? ?? d.nightEndMinuteOfDay,
+      dailyOvertimeThresholdMinutes:
+          json['dailyOvertimeThresholdMinutes'] as int? ??
+              d.dailyOvertimeThresholdMinutes,
+      weeklyOvertimeThresholdMinutes:
+          json['weeklyOvertimeThresholdMinutes'] as int? ??
+              d.weeklyOvertimeThresholdMinutes,
+      weeklyHolidayThresholdMinutes:
+          json['weeklyHolidayThresholdMinutes'] as int? ??
+              d.weeklyHolidayThresholdMinutes,
+      nightPremiumRateBp:
+          json['nightPremiumRateBp'] as int? ?? d.nightPremiumRateBp,
+      dailyOvertimePremiumRateBp:
+          json['dailyOvertimePremiumRateBp'] as int? ??
+              d.dailyOvertimePremiumRateBp,
+      weeklyOvertimePremiumRateBp:
+          json['weeklyOvertimePremiumRateBp'] as int? ??
+              d.weeklyOvertimePremiumRateBp,
+      holidayPremiumWithinDailyThresholdRateBp:
+          json['holidayPremiumWithinDailyThresholdRateBp'] as int? ??
+              d.holidayPremiumWithinDailyThresholdRateBp,
+      holidayPremiumOverDailyThresholdRateBp:
+          json['holidayPremiumOverDailyThresholdRateBp'] as int? ??
+              d.holidayPremiumOverDailyThresholdRateBp,
+      businessIncomeWithholdingRateBp:
+          json['businessIncomeWithholdingRateBp'] as int? ??
+              d.businessIncomeWithholdingRateBp,
+      weekStartsOn: json['weekStartsOn'] as int? ?? d.weekStartsOn,
+      sundayIsHoliday: json['sundayIsHoliday'] as bool? ?? d.sundayIsHoliday,
+    );
+  }
+
   PayrollConstants copyWith({
     int? nightStartMinuteOfDay,
     int? nightEndMinuteOfDay,

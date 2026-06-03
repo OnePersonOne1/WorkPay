@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/app_settings.dart';
 import '../backup/backup_page.dart';
+import 'advanced_settings_page.dart';
 import 'settings_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -23,7 +24,8 @@ class SettingsPage extends ConsumerWidget {
             _ThemeModeTile(current: settings.themeMode),
             const _SectionHeader('데이터'),
             const _BackupTile(),
-            // 추후: 고급 옵션 (Phase 6b)
+            const _SectionHeader('고급'),
+            const _AdvancedTile(),
           ],
         ),
       ),
@@ -115,6 +117,27 @@ class _BackupTile extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const BackupPage()),
+        );
+      },
+    );
+  }
+}
+
+class _AdvancedTile extends StatelessWidget {
+  const _AdvancedTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.tune),
+      title: const Text('고고급 설정'),
+      subtitle: const Text('야간 시간대, 가산율, 세율 등 글로벌 상수'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const AdvancedSettingsPage(),
+          ),
         );
       },
     );

@@ -14,6 +14,7 @@ class AppSettings {
     required this.themeMode,
     required this.locale,
     required this.lastBackupAt,
+    required this.payrollConstantsJson,
     required this.updatedAt,
   });
 
@@ -22,6 +23,9 @@ class AppSettings {
   final ThemeModeSetting themeMode;
   final String locale;
   final DateTime? lastBackupAt;
+
+  /// 사용자가 '고고급 설정'에서 override한 PayrollConstants JSON. null이면 default.
+  final String? payrollConstantsJson;
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -30,6 +34,8 @@ class AppSettings {
     String? locale,
     DateTime? lastBackupAt,
     bool clearLastBackupAt = false,
+    String? payrollConstantsJson,
+    bool clearPayrollConstantsJson = false,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -37,6 +43,9 @@ class AppSettings {
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
       lastBackupAt: clearLastBackupAt ? null : (lastBackupAt ?? this.lastBackupAt),
+      payrollConstantsJson: clearPayrollConstantsJson
+          ? null
+          : (payrollConstantsJson ?? this.payrollConstantsJson),
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -48,9 +57,16 @@ class AppSettings {
       other.themeMode == themeMode &&
       other.locale == locale &&
       other.lastBackupAt == lastBackupAt &&
+      other.payrollConstantsJson == payrollConstantsJson &&
       other.updatedAt == updatedAt;
 
   @override
-  int get hashCode =>
-      Object.hash(schemaVersion, themeMode, locale, lastBackupAt, updatedAt);
+  int get hashCode => Object.hash(
+        schemaVersion,
+        themeMode,
+        locale,
+        lastBackupAt,
+        payrollConstantsJson,
+        updatedAt,
+      );
 }
