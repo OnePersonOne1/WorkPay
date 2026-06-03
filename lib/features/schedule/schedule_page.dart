@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../domain/entity/shift.dart';
+import '../job/job_providers.dart';
+import '../job/jobs_page.dart';
 import 'schedule_providers.dart';
 
 class SchedulePage extends ConsumerWidget {
@@ -135,14 +137,14 @@ class _NoJobsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.work_outline, size: 48),
-            const SizedBox(height: 12),
+            const Icon(Icons.work_outline, size: 40),
+            const SizedBox(height: 8),
             const Text(
               '근무처가 없습니다',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -152,14 +154,15 @@ class _NoJobsHint extends StatelessWidget {
               '시프트를 추가하려면 먼저 근무처를 등록하세요.',
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.add),
               label: const Text('근무처 추가'),
               onPressed: () {
-                // Phase 4b에서 연결
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('근무처 추가 UI는 Phase 4b에서 추가됩니다.')),
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const JobsPage(),
+                  ),
                 );
               },
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
-import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 
 /// 캘린더에 표시 중인 월(첫째 날, 자정 로컬). 기본값: 오늘이 속한 월.
@@ -58,8 +57,3 @@ final shiftsOnSelectedDateProvider = Provider<List<Shift>>((ref) {
   );
 });
 
-/// 활성 근무처 stream.
-final activeJobsProvider = StreamProvider<List<Job>>((ref) {
-  final repo = ref.watch(jobRepositoryProvider);
-  return repo.watchActiveJobs();
-});
