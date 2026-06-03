@@ -27,16 +27,17 @@ final payrollEngineProvider = Provider<PayrollEngine>((ref) {
 });
 
 /// 선택된 월의 모든 활성 근무처를 합산한 MonthlyComputation.
-/// loading/error는 데이터가 들어올 때까지 빈 결과를 반환한다.
+///
+/// shifts + jobs stream을 모두 watch하므로 새 시프트 추가/편집/삭제, 근무처 옵션 변경 시
+/// 자동으로 재계산된다.
 final monthlyComputationProvider = FutureProvider<MonthlyComputation>((ref) async {
   final month = ref.watch(selectedMonthProvider);
-  final jobs = await ref.watch(activeJobsProvider.future);
   final engine = ref.watch(payrollEngineProvider);
-  final shiftRepo = ref.watch(shiftRepositoryProvider);
   final jobRepo = ref.watch(jobRepositoryProvider);
 
-  // 월 단위 시프트는 stream이지만, 여기서는 한 번 읽음 (필요 시 stream-watch로 확장)
-  final allShifts = await shiftRepo.watchShiftsInMonth(month.year, month.month).first;
+  // shifts/jobs stream의 future를 watch — 새 emission마다 이 provider 재실행
+  final allShifts = await ref.watch(shiftsInSelectedMonthProvider.future);
+  final jobs = await ref.watch(activeJobsProvider.future);
 
   // 시프트를 jobId 별로 그룹핑
   final byJob = <int, List<Shift>>{};
