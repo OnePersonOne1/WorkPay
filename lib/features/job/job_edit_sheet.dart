@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/palette/job_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/business_size.dart';
+import '../../domain/entity/deduction_mode.dart';
 import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
 
@@ -16,9 +17,7 @@ Future<bool?> showJobEditSheet(BuildContext context, {Job? job}) {
     isScrollControlled: true,
     showDragHandle: true,
     builder: (ctx) => Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(ctx).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
       child: _JobEditSheet(initial: job),
     ),
   );
@@ -36,9 +35,21 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _wageCtrl;
-  late IncomeType _incomeType;
-  late BusinessSize _businessSize;
+
+  // 기본 필드
   late int _colorArgb;
+
+  // 고급 필드 (편집 시 옵션 로드 후 채움)
+  bool _loadingOptions = false;
+  bool _weeklyHolidayAllowance = false;
+  bool _nightPremium = false;
+  bool _dailyOvertime = false;
+  bool _weeklyOvertime = false;
+  bool _holidayPremium = false;
+  DeductionMode _deductionMode = DeductionMode.none;
+  bool _isWorkStudy = false; // IncomeType 매핑
+  BusinessSize _businessSize = BusinessSize.under5;
+
   bool _saving = false;
 
   @override
@@ -49,9 +60,30 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
     _wageCtrl = TextEditingController(
       text: j == null ? '' : j.hourlyWage.toString(),
     );
-    _incomeType = j?.incomeType ?? IncomeType.partTime;
-    _businessSize = j?.businessSize ?? BusinessSize.under5;
     _colorArgb = j?.colorArgb ?? JobColors.defaultArgb();
+    if (j != null) {
+      _isWorkStudy = j.incomeType == IncomeType.workStudy;
+      _businessSize = j.businessSize;
+      _loadingOptions = true;
+      _loadOptions(j.id);
+    }
+  }
+
+  Future<void> _loadOptions(int jobId) async {
+    final opts = await ref
+        .read(jobRepositoryProvider)
+        .watchOptions(jobId)
+        .first;
+    if (!mounted) return;
+    setState(() {
+      _weeklyHolidayAllowance = opts.weeklyHolidayAllowance;
+      _nightPremium = opts.nightPremium;
+      _dailyOvertime = opts.dailyOvertime;
+      _weeklyOvertime = opts.weeklyOvertime;
+      _holidayPremium = opts.holidayPremium;
+      _deductionMode = opts.deductionMode;
+      _loadingOptions = false;
+    });
   }
 
   @override
@@ -67,27 +99,48 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
     final repo = ref.read(jobRepositoryProvider);
     final name = _nameCtrl.text.trim();
     final wage = int.parse(_wageCtrl.text.trim());
+    final incomeType = _isWorkStudy ? IncomeType.workStudy : IncomeType.partTime;
+    final now = DateTime.now().toUtc();
+
     try {
+      late int jobId;
       if (widget.initial == null) {
-        await repo.create(
+        final created = await repo.create(
           name: name,
           hourlyWage: wage,
-          incomeType: _incomeType,
+          incomeType: incomeType,
           businessSize: _businessSize,
           colorArgb: _colorArgb,
         );
+        jobId = created.id;
       } else {
         await repo.update(
           widget.initial!.copyWith(
             name: name,
             hourlyWage: wage,
-            incomeType: _incomeType,
+            incomeType: incomeType,
             businessSize: _businessSize,
             colorArgb: _colorArgb,
-            updatedAt: DateTime.now().toUtc(),
+            updatedAt: now,
           ),
         );
+        jobId = widget.initial!.id;
       }
+
+      // 옵션 저장 (defaultsFor와 다른 경우만 의미 있지만 항상 update해도 무방)
+      final currentOptions = await repo.watchOptions(jobId).first;
+      await repo.updateOptions(
+        currentOptions.copyWith(
+          weeklyHolidayAllowance: _weeklyHolidayAllowance,
+          nightPremium: _nightPremium,
+          dailyOvertime: _dailyOvertime,
+          weeklyOvertime: _weeklyOvertime,
+          holidayPremium: _holidayPremium,
+          deductionMode: _deductionMode,
+          updatedAt: now,
+        ),
+      );
+
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
@@ -102,6 +155,12 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.initial != null;
+    if (_loadingOptions) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -138,7 +197,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
             TextFormField(
               controller: _wageCtrl,
               decoration: const InputDecoration(
-                labelText: '시급 (원)',
+                labelText: '시급',
                 hintText: '예: 11000',
                 border: OutlineInputBorder(),
                 suffixText: '원',
@@ -155,22 +214,29 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
               },
             ),
             const SizedBox(height: 16),
-            _SectionLabel('소득 유형'),
-            _IncomeTypeSelector(
-              value: _incomeType,
-              onChanged: (v) => setState(() => _incomeType = v),
-            ),
-            const SizedBox(height: 16),
-            _SectionLabel('사업장 규모'),
-            _BusinessSizeSelector(
-              value: _businessSize,
-              onChanged: (v) => setState(() => _businessSize = v),
-            ),
-            const SizedBox(height: 16),
-            _SectionLabel('색상'),
+            const _SectionLabel('색상'),
             _ColorPalette(
               selectedArgb: _colorArgb,
               onSelected: (argb) => setState(() => _colorArgb = argb),
+            ),
+            const SizedBox(height: 16),
+            _AdvancedSection(
+              weeklyHolidayAllowance: _weeklyHolidayAllowance,
+              nightPremium: _nightPremium,
+              dailyOvertime: _dailyOvertime,
+              weeklyOvertime: _weeklyOvertime,
+              holidayPremium: _holidayPremium,
+              deductionMode: _deductionMode,
+              isWorkStudy: _isWorkStudy,
+              businessSize: _businessSize,
+              onWeekly: (v) => setState(() => _weeklyHolidayAllowance = v),
+              onNight: (v) => setState(() => _nightPremium = v),
+              onDailyOT: (v) => setState(() => _dailyOvertime = v),
+              onWeeklyOT: (v) => setState(() => _weeklyOvertime = v),
+              onHoliday: (v) => setState(() => _holidayPremium = v),
+              onDeduction: (v) => setState(() => _deductionMode = v),
+              onWorkStudy: (v) => setState(() => _isWorkStudy = v),
+              onBusinessSize: (v) => setState(() => _businessSize = v),
             ),
             const SizedBox(height: 24),
             FilledButton(
@@ -207,42 +273,6 @@ class _SectionLabel extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
       ),
-    );
-  }
-}
-
-class _IncomeTypeSelector extends StatelessWidget {
-  const _IncomeTypeSelector({required this.value, required this.onChanged});
-  final IncomeType value;
-  final ValueChanged<IncomeType> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<IncomeType>(
-      segments: [
-        for (final t in IncomeType.values)
-          ButtonSegment(value: t, label: Text(t.label)),
-      ],
-      selected: {value},
-      onSelectionChanged: (s) => onChanged(s.first),
-    );
-  }
-}
-
-class _BusinessSizeSelector extends StatelessWidget {
-  const _BusinessSizeSelector({required this.value, required this.onChanged});
-  final BusinessSize value;
-  final ValueChanged<BusinessSize> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<BusinessSize>(
-      segments: [
-        for (final s in BusinessSize.values)
-          ButtonSegment(value: s, label: Text(s.label)),
-      ],
-      selected: {value},
-      onSelectionChanged: (s) => onChanged(s.first),
     );
   }
 }
@@ -303,6 +333,232 @@ class _ColorDot extends StatelessWidget {
             ? const Icon(Icons.check, color: Colors.white, size: 20)
             : null,
       ),
+    );
+  }
+}
+
+class _AdvancedSection extends StatelessWidget {
+  const _AdvancedSection({
+    required this.weeklyHolidayAllowance,
+    required this.nightPremium,
+    required this.dailyOvertime,
+    required this.weeklyOvertime,
+    required this.holidayPremium,
+    required this.deductionMode,
+    required this.isWorkStudy,
+    required this.businessSize,
+    required this.onWeekly,
+    required this.onNight,
+    required this.onDailyOT,
+    required this.onWeeklyOT,
+    required this.onHoliday,
+    required this.onDeduction,
+    required this.onWorkStudy,
+    required this.onBusinessSize,
+  });
+
+  final bool weeklyHolidayAllowance;
+  final bool nightPremium;
+  final bool dailyOvertime;
+  final bool weeklyOvertime;
+  final bool holidayPremium;
+  final DeductionMode deductionMode;
+  final bool isWorkStudy;
+  final BusinessSize businessSize;
+  final ValueChanged<bool> onWeekly;
+  final ValueChanged<bool> onNight;
+  final ValueChanged<bool> onDailyOT;
+  final ValueChanged<bool> onWeeklyOT;
+  final ValueChanged<bool> onHoliday;
+  final ValueChanged<DeductionMode> onDeduction;
+  final ValueChanged<bool> onWorkStudy;
+  final ValueChanged<BusinessSize> onBusinessSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        // ExpansionTile의 분할선 제거
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+          title: const Text('고급 옵션'),
+          subtitle: Text(
+            '수당, 세금, 사업장 분류 — 기본은 모두 OFF',
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+          ),
+          children: [
+            _SubSectionLabel('수당 가산'),
+            _ToggleTile(
+              title: '주휴수당',
+              hint: '주 15시간 이상 근무 시 1일분(통상시급 × 주근로/5, 최대 8h) 추가 지급',
+              value: weeklyHolidayAllowance,
+              onChanged: onWeekly,
+            ),
+            _ToggleTile(
+              title: '야간 가산수당',
+              hint: '22:00 ~ 06:00 근무 시간에 +50% 가산',
+              value: nightPremium,
+              onChanged: onNight,
+            ),
+            _ToggleTile(
+              title: '일 연장 가산수당',
+              hint: '하루 8시간 초과 근무분에 +50% 가산',
+              value: dailyOvertime,
+              onChanged: onDailyOT,
+            ),
+            _ToggleTile(
+              title: '주 연장 가산수당',
+              hint: '주 40시간 초과 근무분에 +50% 가산 (일 연장과 중복 안 됨)',
+              value: weeklyOvertime,
+              onChanged: onWeeklyOT,
+            ),
+            _ToggleTile(
+              title: '휴일근로 가산수당',
+              hint: '휴일 근무에 +50%, 그 중 8시간 초과분은 +100%',
+              value: holidayPremium,
+              onChanged: onHoliday,
+            ),
+            const Divider(height: 24),
+            _SubSectionLabel('세금·공제'),
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 8, top: 4),
+              child: Text(
+                '월급에서 떼는 금액. 보통 학교 근로장학은 비과세, 알바 일부는 3.3%, 정규 사업장은 4대보험.',
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            RadioGroup<DeductionMode>(
+              groupValue: deductionMode,
+              onChanged: (v) {
+                if (v != null) onDeduction(v);
+              },
+              child: Column(
+                children: [
+                  for (final m in DeductionMode.values)
+                    RadioListTile<DeductionMode>(
+                      value: m,
+                      title: Text(m.label),
+                      subtitle: Text(
+                        _deductionHint(m),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            _SubSectionLabel('근무처 분류'),
+            _ToggleTile(
+              title: '근로장학금',
+              hint: '학교에서 받는 근로장학금이에요. 보통 비과세이고 주휴수당이 없어요. (위 옵션과 독립적으로 동작)',
+              value: isWorkStudy,
+              onChanged: onWorkStudy,
+            ),
+            const Divider(height: 24),
+            _SubSectionLabel('사업장 규모'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SegmentedButton<BusinessSize>(
+                    segments: [
+                      for (final s in BusinessSize.values)
+                        ButtonSegment(value: s, label: Text(s.label)),
+                    ],
+                    selected: {businessSize},
+                    onSelectionChanged: (s) => onBusinessSize(s.first),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '5인 미만 사업장은 야간·연장·휴일 가산수당이 법적으로 의무가 아니에요. '
+                    '위 토글은 그래도 직접 켜고 끌 수 있어요.',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _deductionHint(DeductionMode m) {
+    switch (m) {
+      case DeductionMode.none:
+        return '공제 없음';
+      case DeductionMode.businessIncome3_3:
+        return '월급에서 3.3% 자동 차감 (소득세 3% + 지방소득세 0.3%)';
+      case DeductionMode.fourInsurance:
+        return '월급에서 약 9.4% 자동 차감 (국민연금·건강·고용 합산)';
+    }
+  }
+}
+
+class _SubSectionLabel extends StatelessWidget {
+  const _SubSectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _ToggleTile extends StatelessWidget {
+  const _ToggleTile({
+    required this.title,
+    required this.hint,
+    required this.value,
+    required this.onChanged,
+  });
+  final String title;
+  final String hint;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      value: value,
+      onChanged: onChanged,
+      title: Text(title),
+      subtitle: Text(
+        hint,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      dense: true,
     );
   }
 }

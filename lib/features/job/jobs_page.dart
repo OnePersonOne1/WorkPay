@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/palette/job_colors.dart';
 import '../../data/providers.dart';
+import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
 import 'job_edit_sheet.dart';
 import 'job_providers.dart';
@@ -110,7 +111,9 @@ class _JobTile extends ConsumerWidget {
         ),
       ),
       subtitle: Text(
-        '${job.incomeType.label} · ${job.businessSize.label} · ₩$wageFmt/시',
+        job.incomeType == IncomeType.workStudy
+            ? '시급 ₩$wageFmt · 근로장학금'
+            : '시급 ₩$wageFmt',
       ),
       trailing: PopupMenuButton<_JobMenuAction>(
         onSelected: (action) => _handleMenu(context, ref, action),
