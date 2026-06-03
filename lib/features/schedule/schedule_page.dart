@@ -205,6 +205,10 @@ class _MonthlyCalendar extends ConsumerWidget {
       data: (c) => c.dailyPayWon,
       orElse: () => const <DateTime, int>{},
     );
+    final dayColors = ref.watch(dayJobColorsProvider);
+
+    List<int> colorsFor(DateTime day) =>
+        dayColors[DateTime(day.year, day.month, day.day)] ?? const [];
 
     return TableCalendar<int>(
       firstDay: DateTime.utc(2020),
@@ -233,6 +237,7 @@ class _MonthlyCalendar extends ConsumerWidget {
           day: day,
           minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
           payWon: dailyPay[DateTime(day.year, day.month, day.day)],
+          jobColors: colorsFor(day),
           showDailyPay: vis.daily,
         ),
         todayBuilder: (ctx, day, focusedDay) => _DayCell(
@@ -240,6 +245,7 @@ class _MonthlyCalendar extends ConsumerWidget {
           isToday: true,
           minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
           payWon: dailyPay[DateTime(day.year, day.month, day.day)],
+          jobColors: colorsFor(day),
           showDailyPay: vis.daily,
         ),
         selectedBuilder: (ctx, day, focusedDay) => _DayCell(
@@ -247,6 +253,7 @@ class _MonthlyCalendar extends ConsumerWidget {
           isSelected: true,
           minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
           payWon: dailyPay[DateTime(day.year, day.month, day.day)],
+          jobColors: colorsFor(day),
           showDailyPay: vis.daily,
         ),
       ),
@@ -258,6 +265,7 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.showDailyPay,
+    required this.jobColors,
     this.minutes,
     this.payWon,
     this.isToday = false,
@@ -266,6 +274,7 @@ class _DayCell extends StatelessWidget {
   final DateTime day;
   final int? minutes;
   final int? payWon;
+  final List<int> jobColors;
   final bool showDailyPay;
   final bool isToday;
   final bool isSelected;
@@ -300,6 +309,7 @@ class _DayCell extends StatelessWidget {
               fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
             ),
           ),
+          if (jobColors.isNotEmpty) _JobDots(colors: jobColors),
           if (hours != null && hours > 0)
             Text(
               '${_fmtHours(hours)}h',
@@ -331,6 +341,52 @@ class _DayCell extends StatelessWidget {
       return '${man.toStringAsFixed(1)}만';
     }
     return '$won';
+  }
+}
+
+/// 셀에 표시되는 근무처 색 dot row. 최대 3개, 그 이상은 '+' 추가.
+class _JobDots extends StatelessWidget {
+  const _JobDots({required this.colors});
+  final List<int> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    const maxDots = 3;
+    const dotSize = 5.0;
+    const gap = 2.0;
+    final visible = colors.length > maxDots ? colors.take(maxDots).toList() : colors;
+    final hasMore = colors.length > maxDots;
+    return Padding(
+      padding: const EdgeInsets.only(top: 1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < visible.length; i++) ...[
+            if (i > 0) const SizedBox(width: gap),
+            Container(
+              width: dotSize,
+              height: dotSize,
+              decoration: BoxDecoration(
+                color: Color(visible[i]),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+          if (hasMore) ...[
+            const SizedBox(width: gap),
+            Text(
+              '+',
+              style: TextStyle(
+                fontSize: 9,
+                height: 1,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

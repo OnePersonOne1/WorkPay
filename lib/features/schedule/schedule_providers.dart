@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../../domain/entity/shift.dart';
+import '../job/job_providers.dart';
 
 /// 캘린더에 표시 중인 월(첫째 날, 자정 로컬). 기본값: 오늘이 속한 월.
 class SelectedMonthNotifier extends Notifier<DateTime> {
@@ -40,6 +41,29 @@ final shiftsInSelectedMonthProvider = StreamProvider<List<Shift>>((ref) {
   final month = ref.watch(selectedMonthProvider);
   final repo = ref.watch(shiftRepositoryProvider);
   return repo.watchShiftsInMonth(month.year, month.month);
+});
+
+/// 선택된 월의 각 날짜에 시프트가 존재하는 근무처들의 색(ARGB) 리스트.
+/// key: displayDate (자정 로컬). value: 그 날 시프트가 있는 활성 근무처들의 colorArgb (중복 제거).
+/// archived job은 매핑에서 빠져 표시되지 않음.
+final dayJobColorsProvider = Provider<Map<DateTime, List<int>>>((ref) {
+  final shiftsAsync = ref.watch(shiftsInSelectedMonthProvider);
+  final jobsAsync = ref.watch(activeJobsProvider);
+  final shifts = shiftsAsync.asData?.value ?? const [];
+  final jobsList = jobsAsync.asData?.value ?? const [];
+  final colorById = <int, int>{
+    for (final j in jobsList) j.id: j.colorArgb,
+  };
+  final result = <DateTime, List<int>>{};
+  for (final s in shifts) {
+    final local = s.startAt.toLocal();
+    final day = DateTime(local.year, local.month, local.day);
+    final argb = colorById[s.jobId];
+    if (argb == null) continue;
+    final list = result.putIfAbsent(day, () => <int>[]);
+    if (!list.contains(argb)) list.add(argb);
+  }
+  return result;
 });
 
 /// 선택된 날짜에 속하는 시프트 (client-side 필터).
