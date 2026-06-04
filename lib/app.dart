@@ -69,6 +69,8 @@ class _RootShellState extends ConsumerState<_RootShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
+        // Material 3 기본(80) → 64로 컴팩트
+        height: 64,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/palette/job_colors.dart';
-import '../../core/time/week_resolver.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_edit_sheet.dart';
@@ -52,6 +51,8 @@ class SchedulePage extends ConsumerWidget {
           _VisibilityToggles(),
           Divider(height: 1),
           _MonthlyCalendar(),
+          _WeeklySummariesUnderCalendar(),
+          _MonthlySummaryBar(),
           Divider(height: 1),
           Expanded(child: _SelectedDayPanel()),
         ],
@@ -452,31 +453,20 @@ class _SelectedDayPanel extends ConsumerWidget {
     final date = ref.watch(selectedDateProvider);
     final shifts = ref.watch(shiftsOnSelectedDateProvider);
     final asyncJobs = ref.watch(activeJobsProvider);
-    final asyncComp = ref.watch(monthlyComputationProvider);
-    final vis = ref.watch(payrollVisibilityProvider);
 
     final dateLabel =
         '${date.year}년 ${date.month}월 ${date.day}일 (${_weekdayKo(date.weekday)})';
-    final wr = WeekResolver();
-    final weekStart = wr.weekStartOf(date);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: [
-              Text(dateLabel, style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              if (vis.weekly)
-                _WeeklySummary(weekStart: weekStart, asyncComp: asyncComp),
-            ],
+          child: Text(
+            dateLabel,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        if (vis.monthly)
-          _MonthlySummary(asyncComp: asyncComp),
-        const Divider(height: 1),
         Expanded(
           child: asyncJobs.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -498,34 +488,103 @@ class _SelectedDayPanel extends ConsumerWidget {
   }
 }
 
-class _WeeklySummary extends StatelessWidget {
-  const _WeeklySummary({required this.weekStart, required this.asyncComp});
-  final DateTime weekStart;
-  final AsyncValue<dynamic> asyncComp;
+/// 캘린더 아래에 주별 요약 리스트. vis.weekly가 ON일 때만 표시.
+/// 주 시작이 현재 표시 월에 속하는 주만 노출.
+class _WeeklySummariesUnderCalendar extends ConsumerWidget {
+  const _WeeklySummariesUnderCalendar();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vis = ref.watch(payrollVisibilityProvider);
+    if (!vis.weekly) return const SizedBox.shrink();
+
+    final asyncComp = ref.watch(monthlyComputationProvider);
     return asyncComp.maybeWhen(
       data: (c) {
-        final minutes = c.weeklyWorkMinutes[weekStart] as int? ?? 0;
-        final pay = c.weeklyPayWon[weekStart] as int? ?? 0;
-        return _Pill(
-          label: '이 주 ${_h(minutes)}h · ${_won(pay)}',
+        // 주 시작 순으로 정렬
+        final entries = c.weeklyWorkMinutes.entries
+            .where((e) => e.value > 0)
+            .toList()
+          ..sort((a, b) => a.key.compareTo(b.key));
+        if (entries.isEmpty) return const SizedBox.shrink();
+        final scheme = Theme.of(context).colorScheme;
+        final f = NumberFormat.decimalPattern('ko_KR');
+        return Container(
+          color: scheme.surfaceContainerLowest,
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 4),
+                child: Text(
+                  '주별 요약',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              for (var i = 0; i < entries.length; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${i + 1}주차',
+                        style: TextStyle(
+                          color: scheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _fmtHours(entries[i].value),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${f.format(c.weeklyPayWon[entries[i].key] ?? 0)}원',
+                        style: TextStyle(
+                          color: scheme.onSurface,
+                          fontSize: 13,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         );
       },
       orElse: () => const SizedBox.shrink(),
     );
   }
 
-  static String _h(int m) {
-    final h = m / 60;
-    if (h == h.toInt()) return h.toInt().toString();
-    return h.toStringAsFixed(1);
+  static String _fmtHours(int minutes) {
+    final h = minutes / 60;
+    final text = h == h.toInt() ? h.toInt().toString() : h.toStringAsFixed(1);
+    return '${text}h';
   }
+}
 
-  static String _won(int won) {
-    final f = NumberFormat.decimalPattern('ko_KR');
-    return '${f.format(won)}원';
+/// 월 합계 바 — 선택일 패널 위에 노출. vis.monthly가 ON일 때만.
+/// 탭하면 월별 상세 명세 페이지 진입.
+class _MonthlySummaryBar extends ConsumerWidget {
+  const _MonthlySummaryBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vis = ref.watch(payrollVisibilityProvider);
+    if (!vis.monthly) return const SizedBox.shrink();
+    final asyncComp = ref.watch(monthlyComputationProvider);
+    return _MonthlySummary(asyncComp: asyncComp);
   }
 }
 
@@ -595,27 +654,6 @@ class _MonthlySummary extends ConsumerWidget {
     final h = m / 60;
     if (h == h.toInt()) return h.toInt().toString();
     return h.toStringAsFixed(1);
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: scheme.onSecondaryContainer, fontSize: 12),
-      ),
-    );
   }
 }
 
