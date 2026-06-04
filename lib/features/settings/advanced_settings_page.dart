@@ -41,7 +41,7 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('고고급 설정 저장됨')),
+        const SnackBar(content: Text('고급 설정 저장됨')),
       );
       Navigator.of(context).pop();
     } catch (e) {
@@ -102,19 +102,15 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
     _ensureLoaded();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('고고급 설정'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _resetToDefault,
-            child: const Text('초기화'),
-          ),
-        ],
+        title: const Text('고급 설정'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         children: [
           _Note(),
           const SizedBox(height: 12),
+          _ResetTile(onPressed: _saving ? null : _resetToDefault),
+          const SizedBox(height: 8),
           const _SectionHeader('시간대 / 기준'),
           _TimeOfDayField(
             label: '야간 시작',
@@ -274,6 +270,31 @@ class _Note extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ResetTile extends StatelessWidget {
+  const _ResetTile({required this.onPressed});
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: const Icon(Icons.restart_alt),
+        title: const Text('기본값으로 초기화'),
+        subtitle: const Text(
+          '모든 항목을 한국 노동법 기본값으로 되돌리기',
+          style: TextStyle(fontSize: 12),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onPressed,
       ),
     );
   }

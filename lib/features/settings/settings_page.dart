@@ -130,7 +130,7 @@ class _AdvancedTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.tune),
-      title: const Text('고고급 설정'),
+      title: const Text('고급 설정'),
       subtitle: const Text('야간 시간대, 가산율, 세율 등 글로벌 상수'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
