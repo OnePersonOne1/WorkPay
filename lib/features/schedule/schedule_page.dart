@@ -206,9 +206,25 @@ class _MonthlyCalendar extends ConsumerWidget {
       orElse: () => const <DateTime, int>{},
     );
     final dayColors = ref.watch(dayJobColorsProvider);
+    final calendar = ref.watch(holidayCalendarProvider);
 
     List<int> colorsFor(DateTime day) =>
         dayColors[DateTime(day.year, day.month, day.day)] ?? const [];
+
+    bool isHolidayFor(DateTime day) => calendar.isPublicHoliday(day);
+
+    _DayCell makeCell(DateTime day, {bool isToday = false, bool isSelected = false}) {
+      return _DayCell(
+        day: day,
+        minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
+        payWon: dailyPay[DateTime(day.year, day.month, day.day)],
+        jobColors: colorsFor(day),
+        isHoliday: isHolidayFor(day),
+        showDailyPay: vis.daily,
+        isToday: isToday,
+        isSelected: isSelected,
+      );
+    }
 
     return TableCalendar<int>(
       firstDay: DateTime.utc(2020),
@@ -228,34 +244,44 @@ class _MonthlyCalendar extends ConsumerWidget {
         formatButtonVisible: false,
         titleCentered: true,
       ),
+      // 셀이 전체를 채우도록 — _DayCell이 자체 경계선을 그린다.
+      daysOfWeekHeight: 24,
       rowHeight: vis.daily ? 64 : 48,
       calendarStyle: const CalendarStyle(
         outsideDaysVisible: false,
+        cellMargin: EdgeInsets.zero,
+        cellPadding: EdgeInsets.zero,
+      ),
+      // 요일 헤더도 토/일 색 반영
+      daysOfWeekStyle: DaysOfWeekStyle(
+        weekendStyle: TextStyle(
+          color: Theme.of(context).colorScheme.error,
+        ),
+        weekdayStyle: const TextStyle(),
       ),
       calendarBuilders: CalendarBuilders<int>(
-        defaultBuilder: (ctx, day, focusedDay) => _DayCell(
-          day: day,
-          minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
-          payWon: dailyPay[DateTime(day.year, day.month, day.day)],
-          jobColors: colorsFor(day),
-          showDailyPay: vis.daily,
-        ),
-        todayBuilder: (ctx, day, focusedDay) => _DayCell(
-          day: day,
-          isToday: true,
-          minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
-          payWon: dailyPay[DateTime(day.year, day.month, day.day)],
-          jobColors: colorsFor(day),
-          showDailyPay: vis.daily,
-        ),
-        selectedBuilder: (ctx, day, focusedDay) => _DayCell(
-          day: day,
-          isSelected: true,
-          minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
-          payWon: dailyPay[DateTime(day.year, day.month, day.day)],
-          jobColors: colorsFor(day),
-          showDailyPay: vis.daily,
-        ),
+        defaultBuilder: (ctx, day, _) => makeCell(day),
+        todayBuilder: (ctx, day, _) => makeCell(day, isToday: true),
+        selectedBuilder: (ctx, day, _) => makeCell(day, isSelected: true),
+        // 요일 헤더 커스텀 — 일요일 빨강, 토요일 파랑
+        dowBuilder: (ctx, day) {
+          const labels = ['월', '화', '수', '목', '금', '토', '일'];
+          final label = labels[day.weekday - 1];
+          final Color color;
+          if (day.weekday == DateTime.sunday) {
+            color = const Color(0xFFEF4444);
+          } else if (day.weekday == DateTime.saturday) {
+            color = const Color(0xFF3B82F6);
+          } else {
+            color = Theme.of(context).colorScheme.onSurface;
+          }
+          return Center(
+            child: Text(
+              label,
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+            ),
+          );
+        },
       ),
     );
   }
@@ -266,6 +292,7 @@ class _DayCell extends StatelessWidget {
     required this.day,
     required this.showDailyPay,
     required this.jobColors,
+    required this.isHoliday,
     this.minutes,
     this.payWon,
     this.isToday = false,
@@ -275,29 +302,48 @@ class _DayCell extends StatelessWidget {
   final int? minutes;
   final int? payWon;
   final List<int> jobColors;
+  final bool isHoliday;
   final bool showDailyPay;
   final bool isToday;
   final bool isSelected;
 
+  static const _kSundayRed = Color(0xFFEF4444);
+  static const _kSaturdayBlue = Color(0xFF3B82F6);
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     final Color? bg = isSelected
         ? scheme.primary
         : isToday
             ? scheme.primaryContainer
             : null;
-    final Color fg = isSelected
-        ? scheme.onPrimary
-        : isToday
-            ? scheme.onPrimaryContainer
-            : scheme.onSurface;
+
+    // 텍스트 색 결정 — 선택 셀이면 onPrimary가 우선
+    final Color fg;
+    if (isSelected) {
+      fg = scheme.onPrimary;
+    } else if (isHoliday || day.weekday == DateTime.sunday) {
+      fg = _kSundayRed;
+    } else if (day.weekday == DateTime.saturday) {
+      fg = _kSaturdayBlue;
+    } else if (isToday) {
+      fg = scheme.onPrimaryContainer;
+    } else {
+      fg = scheme.onSurface;
+    }
+
     final hours = minutes == null ? null : (minutes! / 60);
+
     return Container(
-      margin: const EdgeInsets.all(2),
-      decoration: bg == null
-          ? null
-          : BoxDecoration(color: bg, shape: BoxShape.rectangle, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.6),
+          width: 0.5,
+        ),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -313,7 +359,10 @@ class _DayCell extends StatelessWidget {
           if (hours != null && hours > 0)
             Text(
               '${_fmtHours(hours)}h',
-              style: TextStyle(color: fg, fontSize: 10),
+              style: TextStyle(
+                color: fg.withValues(alpha: 0.85),
+                fontSize: 10,
+              ),
             ),
           if (showDailyPay && payWon != null && payWon! > 0)
             Text(
