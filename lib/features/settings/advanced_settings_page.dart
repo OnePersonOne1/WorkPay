@@ -342,6 +342,7 @@ class _TimeOfDayField extends StatelessWidget {
           final picked = await showTimePicker(
             context: context,
             initialTime: TimeOfDay(hour: h, minute: m),
+            initialEntryMode: TimePickerEntryMode.input,
           );
           if (picked != null) {
             onChanged(picked.hour * 60 + picked.minute);

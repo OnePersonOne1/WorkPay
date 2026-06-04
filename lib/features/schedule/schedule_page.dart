@@ -33,16 +33,17 @@ class SchedulePage extends ConsumerWidget {
         title: const Text('일정표'),
         actions: [
           if (hasJobs)
-            IconButton(
-              tooltip: '반복 시프트 일괄 추가',
+            TextButton.icon(
               icon: const Icon(Icons.event_repeat),
+              label: const Text('반복 추가'),
               onPressed: () => showRecurringShiftSheet(context),
             ),
-          IconButton(
-            tooltip: '월별 급여 명세',
+          TextButton.icon(
             icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('급여 명세'),
             onPressed: () => pushMonthlyReportDetail(context),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: const Column(
@@ -110,9 +111,9 @@ class _JobsBar extends ConsumerWidget {
               },
             ),
           ),
-          IconButton(
-            tooltip: '근무처 관리',
-            icon: const Icon(Icons.tune),
+          TextButton.icon(
+            icon: const Icon(Icons.tune, size: 18),
+            label: const Text('관리'),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const JobsPage()),

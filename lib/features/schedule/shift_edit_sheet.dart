@@ -111,6 +111,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: base.hour, minute: base.minute),
+      initialEntryMode: TimePickerEntryMode.input,
     );
     if (picked == null) return;
     setState(() {
@@ -138,6 +139,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
         hour: _breakStartAt?.hour ?? 12,
         minute: _breakStartAt?.minute ?? 0,
       ),
+      initialEntryMode: TimePickerEntryMode.input,
     );
     if (picked == null) return;
     setState(() {

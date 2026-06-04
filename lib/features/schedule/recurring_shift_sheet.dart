@@ -101,13 +101,21 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
   }
 
   Future<void> _pickStartTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _startTime);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _startTime,
+      initialEntryMode: TimePickerEntryMode.input,
+    );
     if (picked == null) return;
     setState(() => _startTime = picked);
   }
 
   Future<void> _pickEndTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _endTime);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _endTime,
+      initialEntryMode: TimePickerEntryMode.input,
+    );
     if (picked == null) return;
     setState(() => _endTime = picked);
   }

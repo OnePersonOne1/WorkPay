@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/schedule/schedule_page.dart';
@@ -26,6 +27,18 @@ class SalaryApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
+      // Material 위젯(DatePicker, TimePicker 등)에 한국어 적용:
+      // 오전/오후, 요일, 년/월/일 자동 번역.
+      locale: const Locale('ko'),
+      supportedLocales: const [
+        Locale('ko'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const _RootShell(),
     );
   }

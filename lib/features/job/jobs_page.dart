@@ -28,11 +28,15 @@ class _JobsPageState extends ConsumerState<JobsPage> {
       appBar: AppBar(
         title: const Text('근무처 관리'),
         actions: [
-          IconButton(
-            tooltip: _showArchived ? '활성만 보기' : '보관된 항목 포함',
-            icon: Icon(_showArchived ? Icons.archive : Icons.archive_outlined),
+          TextButton.icon(
+            icon: Icon(
+              _showArchived ? Icons.archive : Icons.archive_outlined,
+              size: 18,
+            ),
+            label: Text(_showArchived ? '활성만' : '보관 포함'),
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: asyncJobs.when(
