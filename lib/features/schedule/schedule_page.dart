@@ -47,8 +47,9 @@ class SchedulePage extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: const Column(
-        children: [
+      body: ListView(
+        // 좁은 화면에서도 전체 콘텐츠를 스크롤로 볼 수 있게.
+        children: const [
           _JobsBar(),
           _VisibilityToggles(),
           Divider(height: 1),
@@ -57,7 +58,7 @@ class SchedulePage extends ConsumerWidget {
           _WeeklySummariesUnderCalendar(),
           _MonthlySummaryBar(),
           Divider(height: 1),
-          Expanded(child: _SelectedDayPanel()),
+          _SelectedDayPanel(),
         ],
       ),
       floatingActionButton: hasJobs
@@ -384,8 +385,8 @@ class _MonthlyCalendar extends ConsumerWidget {
       headerVisible: false,
       // 셀이 전체를 채우도록 — _DayCell이 자체 경계선을 그린다.
       daysOfWeekHeight: 28,
-      // 시간 범위 텍스트가 들어갈 공간 확보 (overflow 방지)
-      rowHeight: vis.daily ? 92 : 74,
+      // 좌상단 날짜 + 좌측 정렬 컨텐츠. 시간 라인 2개 + 총 + 일급까지 들어가도록.
+      rowHeight: vis.daily ? 94 : 78,
       calendarStyle: const CalendarStyle(
         outsideDaysVisible: false,
         cellMargin: EdgeInsets.zero,
@@ -463,13 +464,10 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    final Color? bg = isSelected
-        ? scheme.primary
-        : isToday
-            ? scheme.primaryContainer
-            : null;
+    // 셀 배경: 선택 시만 채움. 오늘은 날짜 숫자에만 작은 배지 (보편적 달력 스타일).
+    final Color? bg = isSelected ? scheme.primary : null;
 
-    // 텍스트 색 결정 — 선택 셀이면 onPrimary가 우선
+    // 텍스트 색 — 선택 셀은 onPrimary, 외엔 토/일/공휴일 색 또는 onSurface
     final Color fg;
     if (isSelected) {
       fg = scheme.onPrimary;
@@ -477,57 +475,87 @@ class _DayCell extends StatelessWidget {
       fg = _kSundayRed;
     } else if (day.weekday == DateTime.saturday) {
       fg = _kSaturdayBlue;
-    } else if (isToday) {
-      fg = scheme.onPrimaryContainer;
     } else {
       fg = scheme.onSurface;
     }
 
     final hours = minutes == null ? null : (minutes! / 60);
-
     final lineColor = scheme.outlineVariant;
+
+    // 날짜 숫자 위젯 — 오늘이면 작은 원형 배지로 강조
+    Widget dateWidget = Text(
+      '${day.day}',
+      style: TextStyle(
+        color: fg,
+        fontSize: 13,
+        fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
+    if (isToday && !isSelected) {
+      dateWidget = Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: scheme.primary,
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          '${day.day}',
+          style: TextStyle(
+            color: scheme.onPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        // right + bottom만 — outer Container의 top/left와 결합해 일반 달력 격자
         border: Border(
           right: BorderSide(color: lineColor, width: 1),
           bottom: BorderSide(color: lineColor, width: 1),
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            '${day.day}',
-            style: TextStyle(
-              color: fg,
-              fontSize: 14,
-              fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          if (jobColors.isNotEmpty) _JobDots(colors: jobColors),
-          // 각 시프트마다 개별 줄로 시각 표시 (겹침/끊김 모두 별도 표시)
-          // 셀 공간 한계: 최대 2개. 3개 이상이면 마지막을 "+N개"로 표시.
-          if (shifts.isNotEmpty) ..._buildShiftLines(fg),
-          if (hours != null && hours > 0)
-            Text(
-              '${_fmtHours(hours)}h',
-              style: TextStyle(
-                color: fg.withValues(alpha: 0.85),
-                fontSize: 10,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(5, 3, 4, 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 날짜 — 좌상단 (보편적 달력 컨벤션)
+            Align(alignment: Alignment.topLeft, child: dateWidget),
+            if (jobColors.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: _JobDots(colors: jobColors),
               ),
-            ),
-          if (showDailyPay && payWon != null && payWon! > 0)
-            Text(
-              _fmtPayShort(payWon!),
-              style: TextStyle(
-                color: fg.withValues(alpha: 0.9),
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
+            if (shifts.isNotEmpty) ..._buildShiftLines(fg),
+            if (hours != null && hours > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Text(
+                  '${_fmtHours(hours)}h',
+                  style: TextStyle(
+                    color: fg.withValues(alpha: 0.85),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-        ],
+            if (showDailyPay && payWon != null && payWon! > 0)
+              Text(
+                _fmtPayShort(payWon!),
+                style: TextStyle(
+                  color: fg.withValues(alpha: 0.9),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -615,36 +643,33 @@ class _JobDots extends StatelessWidget {
     const gap = 2.0;
     final visible = colors.length > maxDots ? colors.take(maxDots).toList() : colors;
     final hasMore = colors.length > maxDots;
-    return Padding(
-      padding: const EdgeInsets.only(top: 1),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < visible.length; i++) ...[
-            if (i > 0) const SizedBox(width: gap),
-            Container(
-              width: dotSize,
-              height: dotSize,
-              decoration: BoxDecoration(
-                color: Color(visible[i]),
-                shape: BoxShape.circle,
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < visible.length; i++) ...[
+          if (i > 0) const SizedBox(width: gap),
+          Container(
+            width: dotSize,
+            height: dotSize,
+            decoration: BoxDecoration(
+              color: Color(visible[i]),
+              shape: BoxShape.circle,
             ),
-          ],
-          if (hasMore) ...[
-            const SizedBox(width: gap),
-            Text(
-              '+',
-              style: TextStyle(
-                fontSize: 9,
-                height: 1,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ],
-      ),
+        if (hasMore) ...[
+          const SizedBox(width: gap),
+          Text(
+            '+',
+            style: TextStyle(
+              fontSize: 9,
+              height: 1,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -667,6 +692,7 @@ class _SelectedDayPanel extends ConsumerWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -675,16 +701,20 @@ class _SelectedDayPanel extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        Expanded(
-          child: asyncJobs.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('근무처 로드 오류: $e')),
-            data: (jobs) {
-              if (jobs.isEmpty) return const _NoJobsHint();
-              if (shifts.isEmpty) return const _NoShiftsHint();
-              return _ShiftList(shifts: shifts, jobs: jobs);
-            },
+        asyncJobs.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
           ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('근무처 로드 오류: $e'),
+          ),
+          data: (jobs) {
+            if (jobs.isEmpty) return const _NoJobsHint();
+            if (shifts.isEmpty) return const _NoShiftsHint();
+            return _ShiftList(shifts: shifts, jobs: jobs);
+          },
         ),
       ],
     );
@@ -928,6 +958,9 @@ class _ShiftList extends ConsumerWidget {
     final use24 = ref.watch(use24HourFormatProvider);
     final jobsById = {for (final j in jobs) j.id: j};
     return ListView.separated(
+      // 외부 ListView가 스크롤 담당
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: shifts.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, i) {
