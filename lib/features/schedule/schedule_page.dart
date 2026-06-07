@@ -266,12 +266,23 @@ class _MonthlyCalendar extends ConsumerWidget {
         cellMargin: EdgeInsets.zero,
         cellPadding: EdgeInsets.zero,
       ),
-      // 요일 헤더도 토/일 색 반영
+      // 요일 헤더도 토/일 색 반영 + 아래에 그리드 라인 (셀 line과 동일)
       daysOfWeekStyle: DaysOfWeekStyle(
         weekendStyle: TextStyle(
           color: Theme.of(context).colorScheme.error,
         ),
         weekdayStyle: const TextStyle(),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: 0.6),
+              width: 0.5,
+            ),
+          ),
+        ),
       ),
       calendarBuilders: CalendarBuilders<int>(
         defaultBuilder: (ctx, day, _) => makeCell(day),
@@ -350,12 +361,14 @@ class _DayCell extends StatelessWidget {
 
     final hours = minutes == null ? null : (minutes! / 60);
 
+    final lineColor = scheme.outlineVariant.withValues(alpha: 0.6);
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.6),
-          width: 0.5,
+        // right + bottom만 — 인접 셀과 합쳐져 일반 달력 그리드 효과 (선 두께 균일)
+        border: Border(
+          right: BorderSide(color: lineColor, width: 0.5),
+          bottom: BorderSide(color: lineColor, width: 0.5),
         ),
       ),
       child: Column(
