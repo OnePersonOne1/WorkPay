@@ -534,18 +534,39 @@ class _DayCell extends StatelessWidget {
   static String _fmtHM(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
-  /// 시프트 시간 줄들. 최대 2개 표시 (총 2줄). 3개 이상이면 첫 1줄 + "..." 두 번째 줄.
+  /// 시프트 시간 줄들. 1개면 시간만, 2개+면 "HH:MM~HH:MM Xh" 형식. 3개+는 "..." 생략.
   List<Widget> _buildShiftLines(Color fg) {
     final lines = <Widget>[];
+    if (shifts.length == 1) {
+      // 단일 시프트: 시간만 표시 (총 근무시간 줄이 이미 hours를 보여줌)
+      final s = shifts[0];
+      lines.add(
+        Text(
+          '${_fmtHM(s.startAt.toLocal())}~${_fmtHM(s.endAt.toLocal())}',
+          style: TextStyle(
+            color: fg.withValues(alpha: 0.85),
+            fontSize: 9,
+            height: 1.2,
+          ),
+        ),
+      );
+      return lines;
+    }
+    // 다중 시프트: 시간 + 각 시프트 근무시간 (휴게 제외) 같이 표시
     final hasOverflow = shifts.length > 2;
     final visibleCount = hasOverflow ? 1 : shifts.length;
     for (var i = 0; i < visibleCount; i++) {
       final s = shifts[i];
       final start = s.startAt.toLocal();
       final end = s.endAt.toLocal();
+      final workMin = end.difference(start).inMinutes - s.breakMinutes;
+      final workH = workMin / 60;
+      final hStr = workH == workH.toInt()
+          ? workH.toInt().toString()
+          : workH.toStringAsFixed(1);
       lines.add(
         Text(
-          '${_fmtHM(start)}~${_fmtHM(end)}',
+          '${_fmtHM(start)}~${_fmtHM(end)} ${hStr}h',
           style: TextStyle(
             color: fg.withValues(alpha: 0.85),
             fontSize: 9,
