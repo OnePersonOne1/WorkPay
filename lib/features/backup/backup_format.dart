@@ -226,6 +226,7 @@ class AppSettingsJson {
     required this.locale,
     required this.lastBackupAt,
     required this.payrollConstantsJson,
+    required this.use24HourFormat,
     required this.updatedAt,
   });
 
@@ -234,6 +235,7 @@ class AppSettingsJson {
   final String locale;
   final DateTime? lastBackupAt;
   final String? payrollConstantsJson;
+  final bool use24HourFormat;
   final DateTime updatedAt;
 
   Map<String, dynamic> toJson() => {
@@ -244,6 +246,7 @@ class AppSettingsJson {
           'lastBackupAt': lastBackupAt!.toUtc().toIso8601String(),
         if (payrollConstantsJson != null)
           'payrollConstantsJson': payrollConstantsJson,
+        'use24HourFormat': use24HourFormat,
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
 
@@ -257,6 +260,7 @@ class AppSettingsJson {
             ? null
             : DateTime.parse(json['lastBackupAt'] as String),
         payrollConstantsJson: json['payrollConstantsJson'] as String?,
+        use24HourFormat: json['use24HourFormat'] as bool? ?? false,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );
 }

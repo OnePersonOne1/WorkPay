@@ -61,6 +61,7 @@ extension AppSettingsRowToEntity on db.AppSettingsTableData {
         locale: locale,
         lastBackupAt: lastBackupAt,
         payrollConstantsJson: payrollConstantsJson,
+        use24HourFormat: use24HourFormat,
         updatedAt: updatedAt,
       );
 }
@@ -73,6 +74,7 @@ extension AppSettingsEntityToCompanion on ent.AppSettings {
         locale: Value(locale),
         lastBackupAt: Value(lastBackupAt),
         payrollConstantsJson: Value(payrollConstantsJson),
+        use24HourFormat: Value(use24HourFormat),
         updatedAt: Value(updatedAt),
       );
 }

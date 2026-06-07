@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/palette/job_colors.dart';
+import '../../core/time/time_picker_dialog.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/business_size.dart';
 import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
 
@@ -110,10 +112,11 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
 
   Future<void> _pickTime(bool isStart) async {
     final base = isStart ? _startAt : _endAt;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: base.hour, minute: base.minute),
-      initialEntryMode: TimePickerEntryMode.input,
+    final use24 = ref.read(use24HourFormatProvider);
+    final picked = await pickTimeDialog(
+      context,
+      initial: TimeOfDay(hour: base.hour, minute: base.minute),
+      use24Hour: use24,
     );
     if (picked == null) return;
     setState(() {
@@ -135,13 +138,14 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
   }
 
   Future<void> _pickBreakStart() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
+    final use24 = ref.read(use24HourFormatProvider);
+    final picked = await pickTimeDialog(
+      context,
+      initial: TimeOfDay(
         hour: _breakStartAt?.hour ?? 12,
         minute: _breakStartAt?.minute ?? 0,
       ),
-      initialEntryMode: TimePickerEntryMode.input,
+      use24Hour: use24,
     );
     if (picked == null) return;
     setState(() {

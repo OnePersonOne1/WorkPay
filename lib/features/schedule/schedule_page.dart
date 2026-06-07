@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/palette/job_colors.dart';
+import '../../core/time/time_format.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
+import '../settings/settings_providers.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
 import 'monthly_report_detail_page.dart';
@@ -330,6 +332,7 @@ class _MonthlyCalendar extends ConsumerWidget {
     final dayColors = ref.watch(dayJobColorsProvider);
     final dayShifts = ref.watch(dayShiftsListProvider);
     final calendar = ref.watch(holidayCalendarProvider);
+    final use24 = ref.watch(use24HourFormatProvider);
 
     List<int> colorsFor(DateTime day) =>
         dayColors[DateTime(day.year, day.month, day.day)] ?? const [];
@@ -348,6 +351,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         shifts: shiftsFor(day),
         isHoliday: isHolidayFor(day),
         showDailyPay: vis.daily,
+        use24Hour: use24,
         isToday: isToday,
         isSelected: isSelected,
       );
@@ -435,6 +439,7 @@ class _DayCell extends StatelessWidget {
     required this.jobColors,
     required this.isHoliday,
     required this.shifts,
+    required this.use24Hour,
     this.minutes,
     this.payWon,
     this.isToday = false,
@@ -447,6 +452,7 @@ class _DayCell extends StatelessWidget {
   final List<Shift> shifts;
   final bool isHoliday;
   final bool showDailyPay;
+  final bool use24Hour;
   final bool isToday;
   final bool isSelected;
 
@@ -531,18 +537,15 @@ class _DayCell extends StatelessWidget {
     return h.toStringAsFixed(1);
   }
 
-  static String _fmtHM(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-
   /// 시프트 시간 줄들. 1개면 시간만, 2개+면 "HH:MM~HH:MM Xh" 형식. 3개+는 "..." 생략.
   List<Widget> _buildShiftLines(Color fg) {
     final lines = <Widget>[];
+    String fmt(DateTime dt) => formatHMCompact(dt, use24Hour: use24Hour);
     if (shifts.length == 1) {
-      // 단일 시프트: 시간만 표시 (총 근무시간 줄이 이미 hours를 보여줌)
       final s = shifts[0];
       lines.add(
         Text(
-          '${_fmtHM(s.startAt.toLocal())}~${_fmtHM(s.endAt.toLocal())}',
+          '${fmt(s.startAt.toLocal())}~${fmt(s.endAt.toLocal())}',
           style: TextStyle(
             color: fg.withValues(alpha: 0.85),
             fontSize: 9,
@@ -552,7 +555,6 @@ class _DayCell extends StatelessWidget {
       );
       return lines;
     }
-    // 다중 시프트: 시간 + 각 시프트 근무시간 (휴게 제외) 같이 표시
     final hasOverflow = shifts.length > 2;
     final visibleCount = hasOverflow ? 1 : shifts.length;
     for (var i = 0; i < visibleCount; i++) {
@@ -566,7 +568,7 @@ class _DayCell extends StatelessWidget {
           : workH.toStringAsFixed(1);
       lines.add(
         Text(
-          '${_fmtHM(start)}~${_fmtHM(end)} ${hStr}h',
+          '${fmt(start)}~${fmt(end)} ${hStr}h',
           style: TextStyle(
             color: fg.withValues(alpha: 0.85),
             fontSize: 9,
@@ -916,13 +918,14 @@ class _NoShiftsHint extends StatelessWidget {
   }
 }
 
-class _ShiftList extends StatelessWidget {
+class _ShiftList extends ConsumerWidget {
   const _ShiftList({required this.shifts, required this.jobs});
   final List<Shift> shifts;
   final List<Job> jobs;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final use24 = ref.watch(use24HourFormatProvider);
     final jobsById = {for (final j in jobs) j.id: j};
     return ListView.separated(
       itemCount: shifts.length,
@@ -933,7 +936,7 @@ class _ShiftList extends StatelessWidget {
         final start = s.startAt.toLocal();
         final end = s.endAt.toLocal();
         final timeText =
-            '${_fmtHM(start)} ~ ${_fmtHM(end)}'
+            '${formatHM(start, use24Hour: use24)} ~ ${formatHM(end, use24Hour: use24)}'
             '${s.breakMinutes > 0 ? ' (휴게 ${s.breakMinutes}분)' : ''}';
         return ListTile(
           leading: CircleAvatar(
@@ -954,7 +957,4 @@ class _ShiftList extends StatelessWidget {
       },
     );
   }
-
-  String _fmtHM(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }

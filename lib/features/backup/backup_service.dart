@@ -95,6 +95,7 @@ class BackupService {
         locale: settings.locale,
         lastBackupAt: settings.lastBackupAt,
         payrollConstantsJson: settings.payrollConstantsJson,
+        use24HourFormat: settings.use24HourFormat,
         updatedAt: settings.updatedAt,
       ),
     );
@@ -186,6 +187,7 @@ class BackupService {
           locale: Value(data.appSettings.locale),
           lastBackupAt: Value(data.appSettings.lastBackupAt),
           payrollConstantsJson: Value(data.appSettings.payrollConstantsJson),
+          use24HourFormat: Value(data.appSettings.use24HourFormat),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );

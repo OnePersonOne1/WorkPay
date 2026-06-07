@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/palette/job_colors.dart';
+import '../../core/time/time_picker_dialog.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/repository/shift_repository.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
 
@@ -104,20 +106,22 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
   }
 
   Future<void> _pickStartTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _startTime,
-      initialEntryMode: TimePickerEntryMode.input,
+    final use24 = ref.read(use24HourFormatProvider);
+    final picked = await pickTimeDialog(
+      context,
+      initial: _startTime,
+      use24Hour: use24,
     );
     if (picked == null) return;
     setState(() => _startTime = picked);
   }
 
   Future<void> _pickEndTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _endTime,
-      initialEntryMode: TimePickerEntryMode.input,
+    final use24 = ref.read(use24HourFormatProvider);
+    final picked = await pickTimeDialog(
+      context,
+      initial: _endTime,
+      use24Hour: use24,
     );
     if (picked == null) return;
     setState(() => _endTime = picked);

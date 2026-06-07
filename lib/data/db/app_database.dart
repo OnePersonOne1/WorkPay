@@ -7,7 +7,7 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-const int kCurrentSchemaVersion = 2;
+const int kCurrentSchemaVersion = 3;
 
 @DriftDatabase(
   tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable],
@@ -27,6 +27,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettingsTable,
               appSettingsTable.payrollConstantsJson,
+            );
+          }
+          if (from < 3) {
+            // v3: app_settings에 use24HourFormat 컬럼 추가
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.use24HourFormat,
             );
           }
         },

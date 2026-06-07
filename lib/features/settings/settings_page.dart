@@ -22,6 +22,7 @@ class SettingsPage extends ConsumerWidget {
           children: [
             const _SectionHeader('화면'),
             _ThemeModeTile(current: settings.themeMode),
+            _TimeFormatTile(use24: settings.use24HourFormat),
             const _SectionHeader('데이터'),
             const _BackupTile(),
             const _SectionHeader('고급'),
@@ -99,6 +100,34 @@ class _ThemeModeTile extends ConsumerWidget {
             settings.copyWith(themeMode: selected, updatedAt: DateTime.now().toUtc()),
           );
         }
+      },
+    );
+  }
+}
+
+class _TimeFormatTile extends ConsumerWidget {
+  const _TimeFormatTile({required this.use24});
+  final bool use24;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SwitchListTile(
+      secondary: const Icon(Icons.access_time),
+      title: const Text('24시간 형식'),
+      subtitle: Text(
+        use24 ? '예: 18:30' : '예: 오후 6:30 (기본)',
+        style: const TextStyle(fontSize: 12),
+      ),
+      value: use24,
+      onChanged: (v) async {
+        final repo = ref.read(appSettingsRepositoryProvider);
+        final settings = await repo.read();
+        await repo.update(
+          settings.copyWith(
+            use24HourFormat: v,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
       },
     );
   }

@@ -22,3 +22,9 @@ final themeModeProvider = Provider<ThemeMode>((ref) {
     orElse: () => ThemeMode.light,
   );
 });
+
+/// 24시간 형식 표시 여부. 기본 false (오전/오후).
+final use24HourFormatProvider = Provider<bool>((ref) {
+  final async = ref.watch(appSettingsProvider);
+  return async.maybeWhen(data: (s) => s.use24HourFormat, orElse: () => false);
+});

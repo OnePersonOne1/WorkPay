@@ -1899,6 +1899,21 @@ class $AppSettingsTableTable extends AppSettingsTable
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _use24HourFormatMeta = const VerificationMeta(
+    'use24HourFormat',
+  );
+  @override
+  late final GeneratedColumn<bool> use24HourFormat = GeneratedColumn<bool>(
+    'use24_hour_format',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use24_hour_format" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1918,6 +1933,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     locale,
     lastBackupAt,
     payrollConstantsJson,
+    use24HourFormat,
     updatedAt,
   ];
   @override
@@ -1976,6 +1992,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('use24_hour_format')) {
+      context.handle(
+        _use24HourFormatMeta,
+        use24HourFormat.isAcceptableOrUnknown(
+          data['use24_hour_format']!,
+          _use24HourFormatMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2017,6 +2042,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}payroll_constants_json'],
       ),
+      use24HourFormat: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use24_hour_format'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2042,6 +2071,9 @@ class AppSettingsTableData extends DataClass
   /// '고고급 설정'에서 사용자가 override한 PayrollConstants 직렬화 JSON.
   /// NULL이면 koreanDefault() 사용.
   final String? payrollConstantsJson;
+
+  /// 24시간 형식 표시 여부. 기본 false (오전/오후 표시).
+  final bool use24HourFormat;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2050,6 +2082,7 @@ class AppSettingsTableData extends DataClass
     required this.locale,
     this.lastBackupAt,
     this.payrollConstantsJson,
+    required this.use24HourFormat,
     required this.updatedAt,
   });
   @override
@@ -2065,6 +2098,7 @@ class AppSettingsTableData extends DataClass
     if (!nullToAbsent || payrollConstantsJson != null) {
       map['payroll_constants_json'] = Variable<String>(payrollConstantsJson);
     }
+    map['use24_hour_format'] = Variable<bool>(use24HourFormat);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2081,6 +2115,7 @@ class AppSettingsTableData extends DataClass
       payrollConstantsJson: payrollConstantsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(payrollConstantsJson),
+      use24HourFormat: Value(use24HourFormat),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2099,6 +2134,7 @@ class AppSettingsTableData extends DataClass
       payrollConstantsJson: serializer.fromJson<String?>(
         json['payrollConstantsJson'],
       ),
+      use24HourFormat: serializer.fromJson<bool>(json['use24HourFormat']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2112,6 +2148,7 @@ class AppSettingsTableData extends DataClass
       'locale': serializer.toJson<String>(locale),
       'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
       'payrollConstantsJson': serializer.toJson<String?>(payrollConstantsJson),
+      'use24HourFormat': serializer.toJson<bool>(use24HourFormat),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2123,6 +2160,7 @@ class AppSettingsTableData extends DataClass
     String? locale,
     Value<DateTime?> lastBackupAt = const Value.absent(),
     Value<String?> payrollConstantsJson = const Value.absent(),
+    bool? use24HourFormat,
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2133,6 +2171,7 @@ class AppSettingsTableData extends DataClass
     payrollConstantsJson: payrollConstantsJson.present
         ? payrollConstantsJson.value
         : this.payrollConstantsJson,
+    use24HourFormat: use24HourFormat ?? this.use24HourFormat,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2149,6 +2188,9 @@ class AppSettingsTableData extends DataClass
       payrollConstantsJson: data.payrollConstantsJson.present
           ? data.payrollConstantsJson.value
           : this.payrollConstantsJson,
+      use24HourFormat: data.use24HourFormat.present
+          ? data.use24HourFormat.value
+          : this.use24HourFormat,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2162,6 +2204,7 @@ class AppSettingsTableData extends DataClass
           ..write('locale: $locale, ')
           ..write('lastBackupAt: $lastBackupAt, ')
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
+          ..write('use24HourFormat: $use24HourFormat, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2175,6 +2218,7 @@ class AppSettingsTableData extends DataClass
     locale,
     lastBackupAt,
     payrollConstantsJson,
+    use24HourFormat,
     updatedAt,
   );
   @override
@@ -2187,6 +2231,7 @@ class AppSettingsTableData extends DataClass
           other.locale == this.locale &&
           other.lastBackupAt == this.lastBackupAt &&
           other.payrollConstantsJson == this.payrollConstantsJson &&
+          other.use24HourFormat == this.use24HourFormat &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2197,6 +2242,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<String> locale;
   final Value<DateTime?> lastBackupAt;
   final Value<String?> payrollConstantsJson;
+  final Value<bool> use24HourFormat;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2205,6 +2251,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.locale = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.payrollConstantsJson = const Value.absent(),
+    this.use24HourFormat = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2214,6 +2261,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.locale = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.payrollConstantsJson = const Value.absent(),
+    this.use24HourFormat = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2224,6 +2272,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<String>? locale,
     Expression<DateTime>? lastBackupAt,
     Expression<String>? payrollConstantsJson,
+    Expression<bool>? use24HourFormat,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2234,6 +2283,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
       if (payrollConstantsJson != null)
         'payroll_constants_json': payrollConstantsJson,
+      if (use24HourFormat != null) 'use24_hour_format': use24HourFormat,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2245,6 +2295,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<String>? locale,
     Value<DateTime?>? lastBackupAt,
     Value<String?>? payrollConstantsJson,
+    Value<bool>? use24HourFormat,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2254,6 +2305,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       locale: locale ?? this.locale,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       payrollConstantsJson: payrollConstantsJson ?? this.payrollConstantsJson,
+      use24HourFormat: use24HourFormat ?? this.use24HourFormat,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2281,6 +2333,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
         payrollConstantsJson.value,
       );
     }
+    if (use24HourFormat.present) {
+      map['use24_hour_format'] = Variable<bool>(use24HourFormat.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2296,6 +2351,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('locale: $locale, ')
           ..write('lastBackupAt: $lastBackupAt, ')
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
+          ..write('use24HourFormat: $use24HourFormat, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -3677,6 +3733,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String> locale,
       Value<DateTime?> lastBackupAt,
       Value<String?> payrollConstantsJson,
+      Value<bool> use24HourFormat,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -3687,6 +3744,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String> locale,
       Value<DateTime?> lastBackupAt,
       Value<String?> payrollConstantsJson,
+      Value<bool> use24HourFormat,
       Value<DateTime> updatedAt,
     });
 
@@ -3726,6 +3784,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get payrollConstantsJson => $composableBuilder(
     column: $table.payrollConstantsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get use24HourFormat => $composableBuilder(
+    column: $table.use24HourFormat,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3774,6 +3837,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get use24HourFormat => $composableBuilder(
+    column: $table.use24HourFormat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3810,6 +3878,11 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<String> get payrollConstantsJson => $composableBuilder(
     column: $table.payrollConstantsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get use24HourFormat => $composableBuilder(
+    column: $table.use24HourFormat,
     builder: (column) => column,
   );
 
@@ -3860,6 +3933,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> locale = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<String?> payrollConstantsJson = const Value.absent(),
+                Value<bool> use24HourFormat = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -3868,6 +3942,7 @@ class $$AppSettingsTableTableTableManager
                 locale: locale,
                 lastBackupAt: lastBackupAt,
                 payrollConstantsJson: payrollConstantsJson,
+                use24HourFormat: use24HourFormat,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -3878,6 +3953,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> locale = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<String?> payrollConstantsJson = const Value.absent(),
+                Value<bool> use24HourFormat = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -3886,6 +3962,7 @@ class $$AppSettingsTableTableTableManager
                 locale: locale,
                 lastBackupAt: lastBackupAt,
                 payrollConstantsJson: payrollConstantsJson,
+                use24HourFormat: use24HourFormat,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

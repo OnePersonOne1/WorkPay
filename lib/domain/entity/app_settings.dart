@@ -15,6 +15,7 @@ class AppSettings {
     required this.locale,
     required this.lastBackupAt,
     required this.payrollConstantsJson,
+    required this.use24HourFormat,
     required this.updatedAt,
   });
 
@@ -26,6 +27,9 @@ class AppSettings {
 
   /// 사용자가 '고고급 설정'에서 override한 PayrollConstants JSON. null이면 default.
   final String? payrollConstantsJson;
+
+  /// 시간 표시를 24시간 형식으로 할지. 기본 false (오전/오후).
+  final bool use24HourFormat;
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -36,6 +40,7 @@ class AppSettings {
     bool clearLastBackupAt = false,
     String? payrollConstantsJson,
     bool clearPayrollConstantsJson = false,
+    bool? use24HourFormat,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -46,6 +51,7 @@ class AppSettings {
       payrollConstantsJson: clearPayrollConstantsJson
           ? null
           : (payrollConstantsJson ?? this.payrollConstantsJson),
+      use24HourFormat: use24HourFormat ?? this.use24HourFormat,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -58,6 +64,7 @@ class AppSettings {
       other.locale == locale &&
       other.lastBackupAt == lastBackupAt &&
       other.payrollConstantsJson == payrollConstantsJson &&
+      other.use24HourFormat == use24HourFormat &&
       other.updatedAt == updatedAt;
 
   @override
@@ -67,6 +74,7 @@ class AppSettings {
         locale,
         lastBackupAt,
         payrollConstantsJson,
+        use24HourFormat,
         updatedAt,
       );
 }

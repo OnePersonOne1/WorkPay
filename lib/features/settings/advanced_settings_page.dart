@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/time/time_format.dart';
+import '../../core/time/time_picker_dialog.dart';
 import '../../data/providers.dart';
 import '../../domain/payroll/payroll_constants.dart';
 import 'settings_providers.dart';
@@ -329,7 +331,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _TimeOfDayField extends StatelessWidget {
+class _TimeOfDayField extends ConsumerWidget {
   const _TimeOfDayField({
     required this.label,
     required this.minuteOfDay,
@@ -340,20 +342,23 @@ class _TimeOfDayField extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = minuteOfDay ~/ 60;
     final m = minuteOfDay % 60;
-    final timeStr =
-        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+    final use24 = ref.watch(use24HourFormatProvider);
+    final timeStr = formatHM(
+      DateTime(2026, 1, 1, h, m),
+      use24Hour: use24,
+    );
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(label),
       trailing: TextButton(
         onPressed: () async {
-          final picked = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay(hour: h, minute: m),
-            initialEntryMode: TimePickerEntryMode.input,
+          final picked = await pickTimeDialog(
+            context,
+            initial: TimeOfDay(hour: h, minute: m),
+            use24Hour: use24,
           );
           if (picked != null) {
             onChanged(picked.hour * 60 + picked.minute);
