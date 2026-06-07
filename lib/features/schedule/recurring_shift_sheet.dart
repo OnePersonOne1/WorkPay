@@ -186,9 +186,26 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
 
       final conflicts = drafts.where((d) => overlapsAny(d.startAt, d.endAt)).length;
       if (conflicts > 0) {
-        _snack(
-          '$conflicts개 시프트가 기존과 겹쳐요. 설정 → 고급 설정에서 "시프트 시간 겹침 허용"을 켜면 입력할 수 있어요.',
-        );
+        if (mounted) {
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('시간이 겹쳐요'),
+              content: Text(
+                '$conflicts개 시프트가 기존과 시간이 겹쳐요.\n\n'
+                '겹치는 기존 시프트는 그대로 보존됩니다.\n'
+                '겹침을 허용하려면 설정 → 고급 설정에서 '
+                '"시프트 시간 겹침 허용"을 켜세요.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('닫기'),
+                ),
+              ],
+            ),
+          );
+        }
         return;
       }
     }

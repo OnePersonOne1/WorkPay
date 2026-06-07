@@ -61,6 +61,29 @@ final shiftsInSelectedMonthProvider = StreamProvider<List<Shift>>((ref) {
   return repo.watchShiftsInMonth(month.year, month.month);
 });
 
+/// 선택된 월의 각 날짜에 대해 (가장 빠른 시작, 가장 늦은 종료) 범위.
+/// 다중 시프트는 합쳐서 표시한다. 없는 날은 매핑에서 빠짐.
+final dayShiftSpanProvider =
+    Provider<Map<DateTime, (DateTime, DateTime)>>((ref) {
+  final shiftsAsync = ref.watch(shiftsInSelectedMonthProvider);
+  final shifts = shiftsAsync.asData?.value ?? const [];
+  final map = <DateTime, (DateTime, DateTime)>{};
+  for (final s in shifts) {
+    final start = s.startAt.toLocal();
+    final end = s.endAt.toLocal();
+    final day = DateTime(start.year, start.month, start.day);
+    final cur = map[day];
+    if (cur == null) {
+      map[day] = (start, end);
+    } else {
+      final newStart = cur.$1.isBefore(start) ? cur.$1 : start;
+      final newEnd = cur.$2.isAfter(end) ? cur.$2 : end;
+      map[day] = (newStart, newEnd);
+    }
+  }
+  return map;
+});
+
 /// 선택된 월의 각 날짜에 시프트가 존재하는 근무처들의 색(ARGB) 리스트.
 /// key: displayDate (자정 로컬). value: 그 날 시프트가 있는 활성 근무처들의 colorArgb (중복 제거).
 /// archived job은 매핑에서 빠져 표시되지 않음.

@@ -80,45 +80,80 @@ class _JobsBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncJobs = ref.watch(activeJobsProvider);
+    final selectedId = ref.watch(selectedJobProvider);
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
+      color: scheme.surfaceContainerHighest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: asyncJobs.when(
-              loading: () => const SizedBox(
-                height: 32,
-                child: Center(child: LinearProgressIndicator()),
-              ),
-              error: (e, _) => Text('근무처 로드 오류: $e'),
-              data: (jobs) {
-                if (jobs.isEmpty) {
-                  return const Text(
-                    '등록된 근무처가 없어요',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  );
-                }
-                return SizedBox(
-                  height: 32,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: jobs.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 6),
-                    itemBuilder: (context, i) => _JobChip(job: jobs[i]),
+          Row(
+            children: [
+              Expanded(
+                child: asyncJobs.when(
+                  loading: () => const SizedBox(
+                    height: 32,
+                    child: Center(child: LinearProgressIndicator()),
                   ),
-                );
-              },
-            ),
+                  error: (e, _) => Text('근무처 로드 오류: $e'),
+                  data: (jobs) {
+                    if (jobs.isEmpty) {
+                      return const Text(
+                        '등록된 근무처가 없어요',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      );
+                    }
+                    return SizedBox(
+                      height: 32,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: jobs.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 6),
+                        itemBuilder: (context, i) => _JobChip(job: jobs[i]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.tune, size: 18),
+                label: const Text('관리'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const JobsPage()),
+                  );
+                },
+              ),
+            ],
           ),
-          TextButton.icon(
-            icon: const Icon(Icons.tune, size: 18),
-            label: const Text('관리'),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const JobsPage()),
+          // 현재 기본 근무지 안내 — 시프트 추가 시 자동 선택될 근무처를 명시
+          asyncJobs.maybeWhen(
+            data: (jobs) {
+              if (jobs.isEmpty) return const SizedBox.shrink();
+              final selected = selectedId == null
+                  ? null
+                  : jobs.firstWhere(
+                      (j) => j.id == selectedId,
+                      orElse: () => jobs.first,
+                    );
+              final label = selected == null
+                  ? '기본 근무지 미선택 — 시프트 추가 시 첫째 근무처가 자동 선택돼요'
+                  : '기본 근무지: ${selected.name} (시프트 추가 시 자동 선택, 변경 가능)';
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(2, 4, 8, 0),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               );
             },
+            orElse: () => const SizedBox.shrink(),
           ),
         ],
       ),
@@ -220,19 +255,24 @@ class _MonthlyCalendar extends ConsumerWidget {
       orElse: () => const <DateTime, int>{},
     );
     final dayColors = ref.watch(dayJobColorsProvider);
+    final daySpans = ref.watch(dayShiftSpanProvider);
     final calendar = ref.watch(holidayCalendarProvider);
 
     List<int> colorsFor(DateTime day) =>
         dayColors[DateTime(day.year, day.month, day.day)] ?? const [];
+    (DateTime, DateTime)? spanFor(DateTime day) =>
+        daySpans[DateTime(day.year, day.month, day.day)];
 
     bool isHolidayFor(DateTime day) => calendar.isPublicHoliday(day);
 
     _DayCell makeCell(DateTime day, {bool isToday = false, bool isSelected = false}) {
+      final key = DateTime(day.year, day.month, day.day);
       return _DayCell(
         day: day,
-        minutes: dailyMinutes[DateTime(day.year, day.month, day.day)],
-        payWon: dailyPay[DateTime(day.year, day.month, day.day)],
+        minutes: dailyMinutes[key],
+        payWon: dailyPay[key],
         jobColors: colorsFor(day),
+        span: spanFor(day),
         isHoliday: isHolidayFor(day),
         showDailyPay: vis.daily,
         isToday: isToday,
@@ -240,7 +280,16 @@ class _MonthlyCalendar extends ConsumerWidget {
       );
     }
 
-    return TableCalendar<int>(
+    final lineColor = Theme.of(context).colorScheme.outlineVariant;
+    return Container(
+      // outer frame — 셀의 right/bottom과 합쳐져 사방 완전한 격자
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: lineColor, width: 1),
+          left: BorderSide(color: lineColor, width: 1),
+        ),
+      ),
+      child: TableCalendar<int>(
       firstDay: DateTime.utc(2020),
       lastDay: DateTime.utc(2099, 12, 31),
       focusedDay: month,
@@ -259,14 +308,15 @@ class _MonthlyCalendar extends ConsumerWidget {
         titleCentered: true,
       ),
       // 셀이 전체를 채우도록 — _DayCell이 자체 경계선을 그린다.
-      daysOfWeekHeight: 24,
-      rowHeight: vis.daily ? 64 : 48,
+      daysOfWeekHeight: 28,
+      // 시간 범위 텍스트가 들어갈 공간 확보
+      rowHeight: vis.daily ? 76 : 60,
       calendarStyle: const CalendarStyle(
         outsideDaysVisible: false,
         cellMargin: EdgeInsets.zero,
         cellPadding: EdgeInsets.zero,
       ),
-      // 요일 헤더도 토/일 색 반영 + 아래에 그리드 라인 (셀 line과 동일)
+      // 요일 헤더 — 토/일 색 + 아래 라인 (셀 line과 동일 톤)
       daysOfWeekStyle: DaysOfWeekStyle(
         weekendStyle: TextStyle(
           color: Theme.of(context).colorScheme.error,
@@ -274,13 +324,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         weekdayStyle: const TextStyle(),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.6),
-              width: 0.5,
-            ),
+            bottom: BorderSide(color: lineColor, width: 1),
           ),
         ),
       ),
@@ -308,6 +352,7 @@ class _MonthlyCalendar extends ConsumerWidget {
           );
         },
       ),
+      ),
     );
   }
 }
@@ -320,6 +365,7 @@ class _DayCell extends StatelessWidget {
     required this.isHoliday,
     this.minutes,
     this.payWon,
+    this.span,
     this.isToday = false,
     this.isSelected = false,
   });
@@ -327,6 +373,7 @@ class _DayCell extends StatelessWidget {
   final int? minutes;
   final int? payWon;
   final List<int> jobColors;
+  final (DateTime, DateTime)? span;
   final bool isHoliday;
   final bool showDailyPay;
   final bool isToday;
@@ -361,14 +408,14 @@ class _DayCell extends StatelessWidget {
 
     final hours = minutes == null ? null : (minutes! / 60);
 
-    final lineColor = scheme.outlineVariant.withValues(alpha: 0.6);
+    final lineColor = scheme.outlineVariant;
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        // right + bottom만 — 인접 셀과 합쳐져 일반 달력 그리드 효과 (선 두께 균일)
+        // right + bottom만 — outer Container의 top/left와 결합해 일반 달력 격자
         border: Border(
-          right: BorderSide(color: lineColor, width: 0.5),
-          bottom: BorderSide(color: lineColor, width: 0.5),
+          right: BorderSide(color: lineColor, width: 1),
+          bottom: BorderSide(color: lineColor, width: 1),
         ),
       ),
       child: Column(
@@ -383,6 +430,15 @@ class _DayCell extends StatelessWidget {
             ),
           ),
           if (jobColors.isNotEmpty) _JobDots(colors: jobColors),
+          if (span != null)
+            Text(
+              '${_fmtHM(span!.$1)}~${_fmtHM(span!.$2)}',
+              style: TextStyle(
+                color: fg.withValues(alpha: 0.85),
+                fontSize: 9,
+                height: 1.2,
+              ),
+            ),
           if (hours != null && hours > 0)
             Text(
               '${_fmtHours(hours)}h',
@@ -409,6 +465,9 @@ class _DayCell extends StatelessWidget {
     if (h == h.toInt()) return h.toInt().toString();
     return h.toStringAsFixed(1);
   }
+
+  static String _fmtHM(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   static String _fmtPayShort(int won) {
     if (won >= 10000) {

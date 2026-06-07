@@ -193,12 +193,22 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
       });
       if (hasOverlap) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                '시간이 겹치는 기존 시프트가 있어요. 설정 → 고급 설정에서 "시프트 시간 겹침 허용"을 켜면 입력할 수 있어요.',
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('시간이 겹쳐요'),
+              content: const Text(
+                '같은 시간대에 이미 추가된 시프트가 있어요.\n\n'
+                '겹치는 시프트는 그대로 보존됩니다.\n'
+                '겹침을 허용하려면 설정 → 고급 설정에서 '
+                '"시프트 시간 겹침 허용"을 켜세요.',
               ),
-              duration: Duration(seconds: 5),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('닫기'),
+                ),
+              ],
             ),
           );
         }
