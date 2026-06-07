@@ -9,6 +9,7 @@ import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import 'payroll_providers.dart';
 import 'schedule_providers.dart';
 
 /// 시프트 생성/편집 modal sheet.
@@ -174,6 +175,37 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
       );
       return;
     }
+
+    // 겹침 검증 — allowShiftOverlap가 false면 차단
+    final constants = ref.read(payrollConstantsProvider);
+    if (!constants.allowShiftOverlap) {
+      final repo = ref.read(shiftRepositoryProvider);
+      // 시작 월의 모든 시프트와 비교 (자정 넘김은 시작 월에 귀속되어 충분히 커버됨)
+      final existing = await repo
+          .watchShiftsInMonth(_startAt.year, _startAt.month)
+          .first;
+      final excludeId = widget.initial?.id;
+      final hasOverlap = existing.any((s) {
+        if (s.id == excludeId) return false;
+        final sStart = s.startAt.toLocal();
+        final sEnd = s.endAt.toLocal();
+        return _startAt.isBefore(sEnd) && sStart.isBefore(_endAt);
+      });
+      if (hasOverlap) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '시간이 겹치는 기존 시프트가 있어요. 설정 → 고급 설정에서 "시프트 시간 겹침 허용"을 켜면 입력할 수 있어요.',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     final repo = ref.read(shiftRepositoryProvider);
     final memo = _memoCtrl.text.trim().isEmpty ? null : _memoCtrl.text.trim();

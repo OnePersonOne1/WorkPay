@@ -201,6 +201,17 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
                 setState(() => _edited = _edited.copyWith(sundayIsHoliday: v)),
             contentPadding: EdgeInsets.zero,
           ),
+          SwitchListTile(
+            title: const Text('시프트 시간 겹침 허용'),
+            subtitle: const Text(
+              'OFF면 같은 시간대에 시프트 입력 차단 (기본)',
+              style: TextStyle(fontSize: 12),
+            ),
+            value: _edited.allowShiftOverlap,
+            onChanged: (v) =>
+                setState(() => _edited = _edited.copyWith(allowShiftOverlap: v)),
+            contentPadding: EdgeInsets.zero,
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(

@@ -18,6 +18,7 @@ class PayrollConstants {
     required this.businessIncomeWithholdingRateBp,
     required this.weekStartsOn,
     required this.sundayIsHoliday,
+    required this.allowShiftOverlap,
   });
 
   /// 한국 근로기준법 기준 기본값 (2025).
@@ -36,6 +37,7 @@ class PayrollConstants {
         businessIncomeWithholdingRateBp: 330, // 3.3%
         weekStartsOn: DateTime.monday,
         sundayIsHoliday: true,
+        allowShiftOverlap: false, // 기본: 시간 겹치는 시프트 입력 차단
       );
 
   /// 야간 시간대 시작 (분 of day). 기본 22:00.
@@ -73,6 +75,10 @@ class PayrollConstants {
   /// 일요일을 휴일로 취급할지. 기본 true (주휴일 관례).
   final bool sundayIsHoliday;
 
+  /// 시프트 시간 겹침 입력 허용 여부. 기본 false (입력 시 차단).
+  /// 입력 검증에만 사용되며 계산엔 영향 없음. UI에서 watch.
+  final bool allowShiftOverlap;
+
   Map<String, dynamic> toJson() => {
         'nightStartMinuteOfDay': nightStartMinuteOfDay,
         'nightEndMinuteOfDay': nightEndMinuteOfDay,
@@ -89,6 +95,7 @@ class PayrollConstants {
         'businessIncomeWithholdingRateBp': businessIncomeWithholdingRateBp,
         'weekStartsOn': weekStartsOn,
         'sundayIsHoliday': sundayIsHoliday,
+        'allowShiftOverlap': allowShiftOverlap,
       };
 
   /// 누락된 필드는 koreanDefault 값을 그대로 사용 — 향후 새 필드 추가 시 호환.
@@ -127,6 +134,8 @@ class PayrollConstants {
               d.businessIncomeWithholdingRateBp,
       weekStartsOn: json['weekStartsOn'] as int? ?? d.weekStartsOn,
       sundayIsHoliday: json['sundayIsHoliday'] as bool? ?? d.sundayIsHoliday,
+      allowShiftOverlap:
+          json['allowShiftOverlap'] as bool? ?? d.allowShiftOverlap,
     );
   }
 
@@ -144,6 +153,7 @@ class PayrollConstants {
     int? businessIncomeWithholdingRateBp,
     int? weekStartsOn,
     bool? sundayIsHoliday,
+    bool? allowShiftOverlap,
   }) {
     return PayrollConstants(
       nightStartMinuteOfDay: nightStartMinuteOfDay ?? this.nightStartMinuteOfDay,
@@ -169,6 +179,7 @@ class PayrollConstants {
           businessIncomeWithholdingRateBp ?? this.businessIncomeWithholdingRateBp,
       weekStartsOn: weekStartsOn ?? this.weekStartsOn,
       sundayIsHoliday: sundayIsHoliday ?? this.sundayIsHoliday,
+      allowShiftOverlap: allowShiftOverlap ?? this.allowShiftOverlap,
     );
   }
 }

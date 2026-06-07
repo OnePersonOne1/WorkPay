@@ -6,7 +6,9 @@ import '../../core/palette/job_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/repository/shift_repository.dart';
+import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import 'payroll_providers.dart';
 import 'schedule_providers.dart';
 
 const int _kMaxBulkShifts = 366; // 안전장치: 1년치 상한
@@ -159,6 +161,37 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
           memo: memo,
         ),
     ];
+
+    // 겹침 검증
+    final constants = ref.read(payrollConstantsProvider);
+    if (!constants.allowShiftOverlap) {
+      final repo = ref.read(shiftRepositoryProvider);
+      // 기간이 걸친 모든 월의 시프트를 모음 (시작월~종료월)
+      final months = <(int, int)>{};
+      for (final d in drafts) {
+        months.add((d.startAt.year, d.startAt.month));
+      }
+      final existing = <Shift>[];
+      for (final (y, m) in months) {
+        existing.addAll(await repo.watchShiftsInMonth(y, m).first);
+      }
+      bool overlapsAny(DateTime s, DateTime e) {
+        for (final ex in existing) {
+          final exStart = ex.startAt.toLocal();
+          final exEnd = ex.endAt.toLocal();
+          if (s.isBefore(exEnd) && exStart.isBefore(e)) return true;
+        }
+        return false;
+      }
+
+      final conflicts = drafts.where((d) => overlapsAny(d.startAt, d.endAt)).length;
+      if (conflicts > 0) {
+        _snack(
+          '$conflicts개 시프트가 기존과 겹쳐요. 설정 → 고급 설정에서 "시프트 시간 겹침 허용"을 켜면 입력할 수 있어요.',
+        );
+        return;
+      }
+    }
 
     setState(() => _saving = true);
     try {
