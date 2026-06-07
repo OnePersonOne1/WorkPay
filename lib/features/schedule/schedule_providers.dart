@@ -36,6 +36,24 @@ class SelectedDateNotifier extends Notifier<DateTime> {
 final selectedDateProvider =
     NotifierProvider<SelectedDateNotifier, DateTime>(SelectedDateNotifier.new);
 
+/// 사용자가 일정표 상단 칩에서 현재 "활성"으로 선택한 근무처 id. 시프트 추가 시 기본값.
+/// 세션 ephemeral — 앱 재시작 시 초기화. null이면 미선택.
+class SelectedJobNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void select(int? jobId) {
+    state = jobId;
+  }
+
+  void toggle(int jobId) {
+    state = state == jobId ? null : jobId;
+  }
+}
+
+final selectedJobProvider =
+    NotifierProvider<SelectedJobNotifier, int?>(SelectedJobNotifier.new);
+
 /// 선택된 월에 속하는 시프트 스트림.
 final shiftsInSelectedMonthProvider = StreamProvider<List<Shift>>((ref) {
   final month = ref.watch(selectedMonthProvider);

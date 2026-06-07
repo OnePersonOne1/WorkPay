@@ -7,6 +7,7 @@ import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/repository/shift_repository.dart';
 import '../job/job_providers.dart';
+import 'schedule_providers.dart';
 
 const int _kMaxBulkShifts = 366; // 안전장치: 1년치 상한
 
@@ -199,7 +200,13 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
             child: Center(child: Text('근무처가 없어요. 먼저 근무처를 추가하세요.')),
           );
         }
-        _selectedJob ??= jobs.first;
+        if (_selectedJob == null) {
+          final preselectedId = ref.read(selectedJobProvider);
+          _selectedJob = preselectedId == null
+              ? jobs.first
+              : jobs.firstWhere((j) => j.id == preselectedId,
+                  orElse: () => jobs.first);
+        }
         return _buildForm(context, jobs);
       },
     );

@@ -9,6 +9,7 @@ import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import 'schedule_providers.dart';
 
 /// 시프트 생성/편집 modal sheet.
 /// [shift]이 null이면 생성, 아니면 편집. [defaultDate]는 새 시프트의 기본 시작 날짜.
@@ -265,9 +266,11 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
         child: Center(child: Text('근무처 로드 오류: $e')),
       ),
       data: (jobs) {
-        // 초기 Job 선택 + 옵션 로드
+        // 초기 Job 선택 + 옵션 로드.
+        // 우선순위: 편집 중인 시프트의 jobId > 일정표에서 활성 선택된 근무처 > 첫 번째
         if (_selectedJob == null) {
-          final initialJobId = widget.initial?.jobId;
+          final initialJobId =
+              widget.initial?.jobId ?? ref.read(selectedJobProvider);
           _selectedJob = initialJobId == null
               ? (jobs.isNotEmpty ? jobs.first : null)
               : jobs.firstWhere(

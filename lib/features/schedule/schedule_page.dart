@@ -6,7 +6,6 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../core/palette/job_colors.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
-import '../job/job_edit_sheet.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
 import 'monthly_report_detail_page.dart';
@@ -127,20 +126,33 @@ class _JobsBar extends ConsumerWidget {
   }
 }
 
-class _JobChip extends StatelessWidget {
+class _JobChip extends ConsumerWidget {
   const _JobChip({required this.job});
   final Job job;
 
+  static const _kSelectedYellow = Color(0xFFFFE082);
+
   @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: CircleAvatar(
-        backgroundColor: JobColors.fromArgb(job.colorArgb),
-        radius: 8,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(selectedJobProvider);
+    final isSelected = selected == job.id;
+    final isFaded = selected != null && !isSelected;
+    return AnimatedOpacity(
+      opacity: isFaded ? 0.4 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      child: FilterChip(
+        avatar: CircleAvatar(
+          backgroundColor: JobColors.fromArgb(job.colorArgb),
+          radius: 8,
+        ),
+        label: Text(job.name),
+        selected: isSelected,
+        selectedColor: _kSelectedYellow,
+        checkmarkColor: Colors.black87,
+        onSelected: (_) =>
+            ref.read(selectedJobProvider.notifier).toggle(job.id),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
       ),
-      label: Text(job.name),
-      onPressed: () => showJobEditSheet(context, job: job),
-      padding: const EdgeInsets.symmetric(horizontal: 6),
     );
   }
 }
