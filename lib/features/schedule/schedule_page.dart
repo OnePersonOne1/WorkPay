@@ -292,7 +292,7 @@ class _CalendarHeader extends ConsumerWidget {
           ),
           TextButton.icon(
             icon: const Icon(Icons.today, size: 18),
-            label: const Text('오늘'),
+            label: const Text('오늘로 돌아가기'),
             onPressed: () {
               final now = DateTime.now();
               ref.read(selectedMonthProvider.notifier).set(now);
@@ -380,8 +380,8 @@ class _MonthlyCalendar extends ConsumerWidget {
       headerVisible: false,
       // 셀이 전체를 채우도록 — _DayCell이 자체 경계선을 그린다.
       daysOfWeekHeight: 28,
-      // 시간 범위 텍스트가 들어갈 공간 확보
-      rowHeight: vis.daily ? 76 : 60,
+      // 시간 범위 텍스트가 들어갈 공간 확보 (overflow 방지)
+      rowHeight: vis.daily ? 92 : 74,
       calendarStyle: const CalendarStyle(
         outsideDaysVisible: false,
         cellMargin: EdgeInsets.zero,
@@ -534,12 +534,12 @@ class _DayCell extends StatelessWidget {
   static String _fmtHM(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
-  /// 시프트 시간 줄들을 만든다. 최대 2개 표시, 3개 이상이면 마지막 줄에 "+N개".
+  /// 시프트 시간 줄들. 최대 2개 표시 (총 2줄). 3개 이상이면 첫 1줄 + "..." 두 번째 줄.
   List<Widget> _buildShiftLines(Color fg) {
-    const maxLines = 2;
     final lines = <Widget>[];
-    final showCount = shifts.length <= maxLines ? shifts.length : maxLines - 1;
-    for (var i = 0; i < showCount; i++) {
+    final hasOverflow = shifts.length > 2;
+    final visibleCount = hasOverflow ? 1 : shifts.length;
+    for (var i = 0; i < visibleCount; i++) {
       final s = shifts[i];
       final start = s.startAt.toLocal();
       final end = s.endAt.toLocal();
@@ -554,14 +554,15 @@ class _DayCell extends StatelessWidget {
         ),
       );
     }
-    if (shifts.length > maxLines) {
+    if (hasOverflow) {
       lines.add(
         Text(
-          '+${shifts.length - showCount}개',
+          '...',
           style: TextStyle(
             color: fg.withValues(alpha: 0.7),
-            fontSize: 9,
-            height: 1.2,
+            fontSize: 11,
+            height: 1.0,
+            fontWeight: FontWeight.w700,
           ),
         ),
       );

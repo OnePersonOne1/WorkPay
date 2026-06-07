@@ -74,36 +74,73 @@ class _DetailScaffold extends ConsumerWidget {
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          title: InkWell(
-            onTap: () => _pickMonth(context, ref),
-            child: Row(
+          title: const Text('급여 명세'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(96),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${month.year}년 ${month.month}월 급여 명세'),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_drop_down, size: 22),
+                // 월 이동 행 — 이전/다음 달 텍스트 라벨 + 년월 변경 버튼
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+                  child: Row(
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(Icons.chevron_left, size: 18),
+                        label: const Text('이전 달'),
+                        onPressed: () => _shift(ref, -1),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _pickMonth(context, ref),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${month.year}년 ${month.month}월',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_drop_down, size: 22),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '년월 이동',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.chevron_right, size: 18),
+                        label: const Text('다음 달'),
+                        onPressed: () => _shift(ref, 1),
+                      ),
+                    ],
+                  ),
+                ),
+                TabBar(
+                  tabs: tabs,
+                  isScrollable: bundle.perJob.isNotEmpty,
+                  tabAlignment: bundle.perJob.isNotEmpty
+                      ? TabAlignment.start
+                      : TabAlignment.fill,
+                ),
               ],
             ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              tooltip: '이전 달',
-              onPressed: () => _shift(ref, -1),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              tooltip: '다음 달',
-              onPressed: () => _shift(ref, 1),
-            ),
-            const SizedBox(width: 4),
-          ],
-          bottom: TabBar(
-            tabs: tabs,
-            isScrollable: bundle.perJob.isNotEmpty,
-            tabAlignment: bundle.perJob.isNotEmpty
-                ? TabAlignment.start
-                : TabAlignment.fill,
           ),
         ),
         body: TabBarView(
