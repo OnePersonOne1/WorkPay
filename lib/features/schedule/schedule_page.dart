@@ -13,6 +13,7 @@ import 'payroll_providers.dart';
 import 'recurring_shift_sheet.dart';
 import 'schedule_providers.dart';
 import 'shift_edit_sheet.dart';
+import 'year_month_picker.dart';
 
 class SchedulePage extends ConsumerWidget {
   const SchedulePage({super.key});
@@ -49,6 +50,7 @@ class SchedulePage extends ConsumerWidget {
           _JobsBar(),
           _VisibilityToggles(),
           Divider(height: 1),
+          _CalendarHeader(),
           _MonthlyCalendar(),
           _WeeklySummariesUnderCalendar(),
           _MonthlySummaryBar(),
@@ -233,6 +235,77 @@ class _VisibilityToggles extends ConsumerWidget {
 }
 
 // ────────────────────────────────────────────────────────────
+// 캘린더 헤더 — 월 이동 + 오늘 + 년/월 선택
+// ────────────────────────────────────────────────────────────
+
+class _CalendarHeader extends ConsumerWidget {
+  const _CalendarHeader();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final month = ref.watch(selectedMonthProvider);
+    void shift(int delta) {
+      final next = DateTime(month.year, month.month + delta);
+      ref.read(selectedMonthProvider.notifier).set(next);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            tooltip: '이전 달',
+            onPressed: () => shift(-1),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () async {
+                final picked = await pickYearMonth(context, initial: month);
+                if (picked != null) {
+                  ref.read(selectedMonthProvider.notifier).set(picked);
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${month.year}년 ${month.month}월',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down, size: 22),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            tooltip: '다음 달',
+            onPressed: () => shift(1),
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.today, size: 18),
+            label: const Text('오늘'),
+            onPressed: () {
+              final now = DateTime.now();
+              ref.read(selectedMonthProvider.notifier).set(now);
+              ref.read(selectedDateProvider.notifier).set(now);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────
 // 월간 캘린더 (커스텀 셀: 시간 + 일급)
 // ────────────────────────────────────────────────────────────
 
@@ -255,13 +328,13 @@ class _MonthlyCalendar extends ConsumerWidget {
       orElse: () => const <DateTime, int>{},
     );
     final dayColors = ref.watch(dayJobColorsProvider);
-    final daySpans = ref.watch(dayShiftSpanProvider);
+    final dayShifts = ref.watch(dayShiftsListProvider);
     final calendar = ref.watch(holidayCalendarProvider);
 
     List<int> colorsFor(DateTime day) =>
         dayColors[DateTime(day.year, day.month, day.day)] ?? const [];
-    (DateTime, DateTime)? spanFor(DateTime day) =>
-        daySpans[DateTime(day.year, day.month, day.day)];
+    List<Shift> shiftsFor(DateTime day) =>
+        dayShifts[DateTime(day.year, day.month, day.day)] ?? const [];
 
     bool isHolidayFor(DateTime day) => calendar.isPublicHoliday(day);
 
@@ -272,7 +345,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         minutes: dailyMinutes[key],
         payWon: dailyPay[key],
         jobColors: colorsFor(day),
-        span: spanFor(day),
+        shifts: shiftsFor(day),
         isHoliday: isHolidayFor(day),
         showDailyPay: vis.daily,
         isToday: isToday,
@@ -303,10 +376,8 @@ class _MonthlyCalendar extends ConsumerWidget {
       calendarFormat: CalendarFormat.month,
       availableCalendarFormats: const {CalendarFormat.month: '월'},
       startingDayOfWeek: StartingDayOfWeek.monday,
-      headerStyle: const HeaderStyle(
-        formatButtonVisible: false,
-        titleCentered: true,
-      ),
+      // 기본 헤더는 숨기고 _CalendarHeader를 위에 별도 배치
+      headerVisible: false,
       // 셀이 전체를 채우도록 — _DayCell이 자체 경계선을 그린다.
       daysOfWeekHeight: 28,
       // 시간 범위 텍스트가 들어갈 공간 확보
@@ -363,9 +434,9 @@ class _DayCell extends StatelessWidget {
     required this.showDailyPay,
     required this.jobColors,
     required this.isHoliday,
+    required this.shifts,
     this.minutes,
     this.payWon,
-    this.span,
     this.isToday = false,
     this.isSelected = false,
   });
@@ -373,7 +444,7 @@ class _DayCell extends StatelessWidget {
   final int? minutes;
   final int? payWon;
   final List<int> jobColors;
-  final (DateTime, DateTime)? span;
+  final List<Shift> shifts;
   final bool isHoliday;
   final bool showDailyPay;
   final bool isToday;
@@ -430,15 +501,9 @@ class _DayCell extends StatelessWidget {
             ),
           ),
           if (jobColors.isNotEmpty) _JobDots(colors: jobColors),
-          if (span != null)
-            Text(
-              '${_fmtHM(span!.$1)}~${_fmtHM(span!.$2)}',
-              style: TextStyle(
-                color: fg.withValues(alpha: 0.85),
-                fontSize: 9,
-                height: 1.2,
-              ),
-            ),
+          // 각 시프트마다 개별 줄로 시각 표시 (겹침/끊김 모두 별도 표시)
+          // 셀 공간 한계: 최대 2개. 3개 이상이면 마지막을 "+N개"로 표시.
+          if (shifts.isNotEmpty) ..._buildShiftLines(fg),
           if (hours != null && hours > 0)
             Text(
               '${_fmtHours(hours)}h',
@@ -468,6 +533,41 @@ class _DayCell extends StatelessWidget {
 
   static String _fmtHM(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+  /// 시프트 시간 줄들을 만든다. 최대 2개 표시, 3개 이상이면 마지막 줄에 "+N개".
+  List<Widget> _buildShiftLines(Color fg) {
+    const maxLines = 2;
+    final lines = <Widget>[];
+    final showCount = shifts.length <= maxLines ? shifts.length : maxLines - 1;
+    for (var i = 0; i < showCount; i++) {
+      final s = shifts[i];
+      final start = s.startAt.toLocal();
+      final end = s.endAt.toLocal();
+      lines.add(
+        Text(
+          '${_fmtHM(start)}~${_fmtHM(end)}',
+          style: TextStyle(
+            color: fg.withValues(alpha: 0.85),
+            fontSize: 9,
+            height: 1.2,
+          ),
+        ),
+      );
+    }
+    if (shifts.length > maxLines) {
+      lines.add(
+        Text(
+          '+${shifts.length - showCount}개',
+          style: TextStyle(
+            color: fg.withValues(alpha: 0.7),
+            fontSize: 9,
+            height: 1.2,
+          ),
+        ),
+      );
+    }
+    return lines;
+  }
 
   static String _fmtPayShort(int won) {
     if (won >= 10000) {

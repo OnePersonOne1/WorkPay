@@ -8,6 +8,7 @@ import '../../domain/payroll/monthly_computation.dart';
 import 'monthly_report_bundle.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
+import 'year_month_picker.dart';
 
 /// 선택된 월의 급여 명세 상세 페이지.
 /// 전체 합산 + 근무처별 탭.
@@ -32,13 +33,25 @@ class MonthlyReportDetailPage extends ConsumerWidget {
   }
 }
 
-class _DetailScaffold extends StatelessWidget {
+class _DetailScaffold extends ConsumerWidget {
   const _DetailScaffold({required this.month, required this.bundle});
   final DateTime month;
   final MonthlyReportBundle bundle;
 
+  void _shift(WidgetRef ref, int delta) {
+    final next = DateTime(month.year, month.month + delta);
+    ref.read(selectedMonthProvider.notifier).set(next);
+  }
+
+  Future<void> _pickMonth(BuildContext context, WidgetRef ref) async {
+    final picked = await pickYearMonth(context, initial: month);
+    if (picked != null) {
+      ref.read(selectedMonthProvider.notifier).set(picked);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tabs = <Widget>[
       const Tab(text: '전체'),
       for (final entry in bundle.perJob)
@@ -61,7 +74,30 @@ class _DetailScaffold extends StatelessWidget {
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('${month.year}년 ${month.month}월 급여 명세'),
+          title: InkWell(
+            onTap: () => _pickMonth(context, ref),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${month.year}년 ${month.month}월 급여 명세'),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down, size: 22),
+              ],
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              tooltip: '이전 달',
+              onPressed: () => _shift(ref, -1),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              tooltip: '다음 달',
+              onPressed: () => _shift(ref, 1),
+            ),
+            const SizedBox(width: 4),
+          ],
           bottom: TabBar(
             tabs: tabs,
             isScrollable: bundle.perJob.isNotEmpty,

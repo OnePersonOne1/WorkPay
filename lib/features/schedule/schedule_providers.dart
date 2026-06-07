@@ -61,25 +61,20 @@ final shiftsInSelectedMonthProvider = StreamProvider<List<Shift>>((ref) {
   return repo.watchShiftsInMonth(month.year, month.month);
 });
 
-/// 선택된 월의 각 날짜에 대해 (가장 빠른 시작, 가장 늦은 종료) 범위.
-/// 다중 시프트는 합쳐서 표시한다. 없는 날은 매핑에서 빠짐.
-final dayShiftSpanProvider =
-    Provider<Map<DateTime, (DateTime, DateTime)>>((ref) {
+/// 선택된 월의 각 날짜의 시프트 리스트 (시작 시각 순 정렬, 각각 별도 표시).
+/// 겹치거나 같은 근무를 끊어서 한 경우 모두 별도 항목.
+final dayShiftsListProvider =
+    Provider<Map<DateTime, List<Shift>>>((ref) {
   final shiftsAsync = ref.watch(shiftsInSelectedMonthProvider);
   final shifts = shiftsAsync.asData?.value ?? const [];
-  final map = <DateTime, (DateTime, DateTime)>{};
+  final map = <DateTime, List<Shift>>{};
   for (final s in shifts) {
-    final start = s.startAt.toLocal();
-    final end = s.endAt.toLocal();
-    final day = DateTime(start.year, start.month, start.day);
-    final cur = map[day];
-    if (cur == null) {
-      map[day] = (start, end);
-    } else {
-      final newStart = cur.$1.isBefore(start) ? cur.$1 : start;
-      final newEnd = cur.$2.isAfter(end) ? cur.$2 : end;
-      map[day] = (newStart, newEnd);
-    }
+    final local = s.startAt.toLocal();
+    final day = DateTime(local.year, local.month, local.day);
+    map.putIfAbsent(day, () => <Shift>[]).add(s);
+  }
+  for (final list in map.values) {
+    list.sort((a, b) => a.startAt.compareTo(b.startAt));
   }
   return map;
 });
