@@ -1912,7 +1912,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("use24_hour_format" IN (0, 1))',
     ),
-    defaultValue: const Constant(false),
+    defaultValue: const Constant(true),
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -2072,7 +2072,7 @@ class AppSettingsTableData extends DataClass
   /// NULL이면 koreanDefault() 사용.
   final String? payrollConstantsJson;
 
-  /// 24시간 형식 표시 여부. 기본 false (오전/오후 표시).
+  /// 24시간 형식 표시 여부. 기본 true (24h). false면 오전/오후 표시.
   final bool use24HourFormat;
   final DateTime updatedAt;
   const AppSettingsTableData({

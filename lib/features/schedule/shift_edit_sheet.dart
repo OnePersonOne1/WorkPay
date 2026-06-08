@@ -48,7 +48,8 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
 
   Job? _selectedJob;
   late DateTime _startAt;
-  late DateTime _endAt;
+  // 종료가 시작 이전이거나 같으면 null로 자동 해제 — 사용자가 다시 골라야 저장 가능
+  DateTime? _endAt;
   DateTime? _breakStartAt;
   bool _saving = false;
   bool _deleting = false;
@@ -64,7 +65,6 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
       _breakStartAt = s.breakStartAt?.toLocal();
       _breakCtrl = TextEditingController(text: s.breakMinutes.toString());
       _memoCtrl = TextEditingController(text: s.memo ?? '');
-      // job + options는 build에서 watch
     } else {
       final base = widget.defaultDate ?? DateTime.now();
       final day = DateTime(base.year, base.month, base.day);
@@ -83,7 +83,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
   }
 
   Future<void> _pickDate(bool isStart) async {
-    final base = isStart ? _startAt : _endAt;
+    final base = isStart ? _startAt : (_endAt ?? _startAt.add(const Duration(hours: 9)));
     final picked = await showDatePicker(
       context: context,
       initialDate: base,
@@ -97,21 +97,23 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
           picked.year, picked.month, picked.day,
           _startAt.hour, _startAt.minute,
         );
-        // 종료가 시작보다 앞이면 자동으로 +9시간으로 보정
-        if (!_endAt.isAfter(_startAt)) {
-          _endAt = _startAt.add(const Duration(hours: 9));
+        // 종료가 시작 이전이거나 같으면 해제 (사용자가 다시 골라야 함)
+        if (_endAt != null && !_endAt!.isAfter(_startAt)) {
+          _endAt = null;
         }
       } else {
-        _endAt = DateTime(
-          picked.year, picked.month, picked.day,
-          _endAt.hour, _endAt.minute,
-        );
+        final h = _endAt?.hour ?? 18;
+        final m = _endAt?.minute ?? 0;
+        final candidate = DateTime(picked.year, picked.month, picked.day, h, m);
+        _endAt = candidate.isAfter(_startAt) ? candidate : null;
       }
     });
   }
 
   Future<void> _pickTime(bool isStart) async {
-    final base = isStart ? _startAt : _endAt;
+    final base = isStart
+        ? _startAt
+        : (_endAt ?? _startAt.add(const Duration(hours: 9)));
     final use24 = ref.read(use24HourFormatProvider);
     final picked = await pickTimeDialog(
       context,
@@ -125,14 +127,17 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
           _startAt.year, _startAt.month, _startAt.day,
           picked.hour, picked.minute,
         );
-        if (!_endAt.isAfter(_startAt)) {
-          _endAt = _startAt.add(const Duration(hours: 9));
+        if (_endAt != null && !_endAt!.isAfter(_startAt)) {
+          _endAt = null;
         }
       } else {
-        _endAt = DateTime(
-          _endAt.year, _endAt.month, _endAt.day,
+        // 종료 날짜가 있으면 그 날짜에, 없으면 시작 날짜에 시간만 설정
+        final endDate = _endAt ?? _startAt;
+        final candidate = DateTime(
+          endDate.year, endDate.month, endDate.day,
           picked.hour, picked.minute,
         );
+        _endAt = candidate.isAfter(_startAt) ? candidate : null;
       }
     });
   }
@@ -165,13 +170,28 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
       );
       return;
     }
-    if (!_endAt.isAfter(_startAt)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('종료가 시작보다 뒤여야 합니다')),
+    // 종료 시간이 해제됐을 때 — 시작 시간 변경으로 자동 해제됐거나 미선택
+    final endAt = _endAt;
+    if (endAt == null) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('종료 시간을 추가하세요'),
+          content: const Text(
+            '근무 종료 시간이 선택돼 있지 않아요.\n'
+            '종료 시간을 골라야 시프트를 추가할 수 있어요.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('닫기'),
+            ),
+          ],
+        ),
       );
       return;
     }
-    final totalMinutes = _endAt.difference(_startAt).inMinutes;
+    final totalMinutes = endAt.difference(_startAt).inMinutes;
     final breakMinutes = int.parse(_breakCtrl.text.trim());
     if (breakMinutes >= totalMinutes) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,7 +204,6 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
     final constants = ref.read(payrollConstantsProvider);
     if (!constants.allowShiftOverlap) {
       final repo = ref.read(shiftRepositoryProvider);
-      // 시작 월의 모든 시프트와 비교 (자정 넘김은 시작 월에 귀속되어 충분히 커버됨)
       final existing = await repo
           .watchShiftsInMonth(_startAt.year, _startAt.month)
           .first;
@@ -193,7 +212,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
         if (s.id == excludeId) return false;
         final sStart = s.startAt.toLocal();
         final sEnd = s.endAt.toLocal();
-        return _startAt.isBefore(sEnd) && sStart.isBefore(_endAt);
+        return _startAt.isBefore(sEnd) && sStart.isBefore(endAt);
       });
       if (hasOverlap) {
         if (mounted) {
@@ -228,7 +247,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
         await repo.create(
           jobId: job.id,
           startAt: _startAt,
-          endAt: _endAt,
+          endAt: endAt,
           breakMinutes: breakMinutes,
           breakStartAt: _preciseBreak ? _breakStartAt : null,
           memo: memo,
@@ -238,7 +257,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
           widget.initial!.copyWith(
             jobId: job.id,
             startAt: _startAt.toUtc(),
-            endAt: _endAt.toUtc(),
+            endAt: endAt.toUtc(),
             breakMinutes: breakMinutes,
             breakStartAt: _preciseBreak ? _breakStartAt?.toUtc() : null,
             clearBreakStartAt: !_preciseBreak,
@@ -351,8 +370,8 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
   Widget _buildForm(BuildContext context, List<Job> jobs, bool isEdit) {
     final scheme = Theme.of(context).colorScheme;
     final selectedJob = _selectedJob!;
-    final totalMinutes = _endAt.isAfter(_startAt)
-        ? _endAt.difference(_startAt).inMinutes
+    final totalMinutes = (_endAt != null && _endAt!.isAfter(_startAt))
+        ? _endAt!.difference(_startAt).inMinutes
         : 0;
     final breakMin = int.tryParse(_breakCtrl.text.trim()) ?? 0;
     final workMin = (totalMinutes - breakMin).clamp(0, 1 << 30);
@@ -542,17 +561,24 @@ class _DateTimeRow extends StatelessWidget {
     required this.onPickTime,
   });
   final String label;
-  final DateTime date;
+  // null이면 미선택 상태 — 버튼 텍스트가 "날짜 선택"/"시간 선택"으로 바뀜
+  final DateTime? date;
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
 
   @override
   Widget build(BuildContext context) {
-    final dateText = '${date.year}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-    final timeText = '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
+    final hasValue = date != null;
+    final dateText = hasValue
+        ? '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}'
+        : '날짜 선택';
+    final timeText = hasValue
+        ? '${date!.hour.toString().padLeft(2, '0')}:${date!.minute.toString().padLeft(2, '0')}'
+        : '시간 선택';
+    final scheme = Theme.of(context).colorScheme;
+    final missingStyle = !hasValue
+        ? OutlinedButton.styleFrom(foregroundColor: scheme.error)
+        : null;
     return Row(
       children: [
         SizedBox(
@@ -568,6 +594,7 @@ class _DateTimeRow extends StatelessWidget {
             icon: const Icon(Icons.calendar_today_outlined, size: 16),
             label: Text(dateText),
             onPressed: onPickDate,
+            style: missingStyle,
           ),
         ),
         const SizedBox(width: 6),
@@ -577,6 +604,7 @@ class _DateTimeRow extends StatelessWidget {
             icon: const Icon(Icons.access_time, size: 16),
             label: Text(timeText),
             onPressed: onPickTime,
+            style: missingStyle,
           ),
         ),
       ],

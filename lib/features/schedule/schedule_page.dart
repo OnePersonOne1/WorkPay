@@ -511,50 +511,52 @@ class _DayCell extends StatelessWidget {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(
-          right: BorderSide(color: lineColor, width: 1),
-          bottom: BorderSide(color: lineColor, width: 1),
+    // SizedBox.expand로 셀 슬롯 전체를 채움 — 색/클릭 영역이 슬롯 끝까지 확장.
+    // mainAxisSize 미지정(=max)으로 Column이 슬롯 높이를 채워, 내용이 적어도 항상 상단 정렬.
+    return SizedBox.expand(
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border(
+            right: BorderSide(color: lineColor, width: 1),
+            bottom: BorderSide(color: lineColor, width: 1),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(5, 3, 4, 2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 날짜 — 좌상단 (보편적 달력 컨벤션)
-            Align(alignment: Alignment.topLeft, child: dateWidget),
-            if (jobColors.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: _JobDots(colors: jobColors),
-              ),
-            if (shifts.isNotEmpty) ..._buildShiftLines(fg),
-            if (hours != null && hours > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Text(
-                  '${_fmtHours(hours)}h',
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(5, 3, 4, 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              dateWidget,
+              if (jobColors.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: _JobDots(colors: jobColors),
+                ),
+              if (shifts.isNotEmpty) ..._buildShiftLines(fg),
+              if (hours != null && hours > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Text(
+                    '${_fmtHours(hours)}h',
+                    style: TextStyle(
+                      color: fg.withValues(alpha: 0.85),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              if (showDailyPay && payWon != null && payWon! > 0)
+                Text(
+                  _fmtPayShort(payWon!),
                   style: TextStyle(
-                    color: fg.withValues(alpha: 0.85),
-                    fontSize: 10,
+                    color: fg.withValues(alpha: 0.9),
+                    fontSize: 9,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            if (showDailyPay && payWon != null && payWon! > 0)
-              Text(
-                _fmtPayShort(payWon!),
-                style: TextStyle(
-                  color: fg.withValues(alpha: 0.9),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

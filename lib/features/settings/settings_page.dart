@@ -115,7 +115,7 @@ class _TimeFormatTile extends ConsumerWidget {
       secondary: const Icon(Icons.access_time),
       title: const Text('24시간 형식'),
       subtitle: Text(
-        use24 ? '예: 18:30' : '예: 오후 6:30 (기본)',
+        use24 ? '예: 18:30 (기본)' : '예: 오후 6:30',
         style: const TextStyle(fontSize: 12),
       ),
       value: use24,

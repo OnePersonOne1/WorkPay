@@ -62,8 +62,8 @@ class AppSettingsTable extends Table {
   /// NULL이면 koreanDefault() 사용.
   TextColumn get payrollConstantsJson => text().nullable()();
 
-  /// 24시간 형식 표시 여부. 기본 false (오전/오후 표시).
-  BoolColumn get use24HourFormat => boolean().withDefault(const Constant(false))();
+  /// 24시간 형식 표시 여부. 기본 true (24h). false면 오전/오후 표시.
+  BoolColumn get use24HourFormat => boolean().withDefault(const Constant(true))();
 
   DateTimeColumn get updatedAt => dateTime()();
 
