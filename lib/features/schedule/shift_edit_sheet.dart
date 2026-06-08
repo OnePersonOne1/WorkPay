@@ -13,6 +13,7 @@ import '../job/job_providers.dart';
 import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
+import 'undo_controller.dart';
 
 /// 시프트 생성/편집 modal sheet.
 /// [shift]이 null이면 생성, 아니면 편집. [defaultDate]는 새 시프트의 기본 시작 날짜.
@@ -243,6 +244,12 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
     final repo = ref.read(shiftRepositoryProvider);
     final memo = _memoCtrl.text.trim().isEmpty ? null : _memoCtrl.text.trim();
     try {
+      // Undo snapshot — mutation 직전 현재 월 상태 저장
+      await ref.read(undoControllerProvider.notifier).snapshotBefore(
+            year: _startAt.year,
+            month: _startAt.month,
+            description: widget.initial == null ? '시프트 추가' : '시프트 편집',
+          );
       if (widget.initial == null) {
         await repo.create(
           jobId: job.id,
@@ -304,6 +311,12 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
     if (confirm != true || !mounted) return;
     setState(() => _deleting = true);
     try {
+      final startLocal = initial.startAt.toLocal();
+      await ref.read(undoControllerProvider.notifier).snapshotBefore(
+            year: startLocal.year,
+            month: startLocal.month,
+            description: '시프트 삭제',
+          );
       await ref.read(shiftRepositoryProvider).delete(initial.id);
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {

@@ -47,4 +47,14 @@ abstract interface class ShiftRepository {
   Future<void> update(Shift shift);
 
   Future<void> delete(int id);
+
+  /// 특정 월의 모든 시프트 삭제. 반환: 삭제된 개수.
+  Future<int> deleteShiftsInMonth(int year, int month);
+
+  /// 특정 근무처의 모든 시프트 삭제. 반환: 삭제된 개수.
+  Future<int> deleteShiftsOfJob(int jobId);
+
+  /// 특정 월의 시프트를 [shifts]로 통째로 교체. Undo 복원용.
+  /// id, hourlyWageSnapshot, createdAt 등 모든 필드 그대로 복원.
+  Future<void> replaceShiftsInMonth(int year, int month, List<Shift> shifts);
 }

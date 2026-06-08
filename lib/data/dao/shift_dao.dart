@@ -108,4 +108,57 @@ class ShiftDao extends DatabaseAccessor<AppDatabase> with _$ShiftDaoMixin {
   Future<void> deleteById(int id) {
     return (delete(shifts)..where((s) => s.id.equals(id))).go();
   }
+
+  Future<int> deleteByMonth(int year, int month) async {
+    final startLocal = DateTime(year, month, 1);
+    final endLocal = DateTime(year, month + 1, 1);
+    return (delete(shifts)
+          ..where((s) =>
+              s.startAt.isBiggerOrEqualValue(startLocal.toUtc()) &
+              s.startAt.isSmallerThanValue(endLocal.toUtc())))
+        .go();
+  }
+
+  Future<int> deleteByJob(int jobId) {
+    return (delete(shifts)..where((s) => s.jobId.equals(jobId))).go();
+  }
+
+  /// 트랜잭션으로 month 내 시프트를 통째로 교체. ID 등 모든 필드 보존.
+  /// Undo 복원용 — 사용자가 직접 인서트할 일은 거의 없음.
+  Future<void> replaceMonth(
+    int year,
+    int month,
+    List<({
+      int id,
+      int jobId,
+      DateTime startAt,
+      DateTime endAt,
+      int breakMinutes,
+      DateTime? breakStartAt,
+      int hourlyWageSnapshot,
+      String? memo,
+      DateTime createdAt,
+      DateTime updatedAt,
+    })> rows,
+  ) async {
+    await transaction(() async {
+      await deleteByMonth(year, month);
+      for (final r in rows) {
+        await into(shifts).insert(
+          ShiftsCompanion.insert(
+            id: Value(r.id),
+            jobId: r.jobId,
+            startAt: r.startAt.toUtc(),
+            endAt: r.endAt.toUtc(),
+            breakMinutes: Value(r.breakMinutes),
+            breakStartAt: Value(r.breakStartAt?.toUtc()),
+            hourlyWageSnapshot: r.hourlyWageSnapshot,
+            memo: Value(r.memo),
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+          ),
+        );
+      }
+    });
+  }
 }

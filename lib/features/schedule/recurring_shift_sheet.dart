@@ -12,6 +12,7 @@ import '../job/job_providers.dart';
 import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
+import 'undo_controller.dart';
 
 const int _kMaxBulkShifts = 366; // 안전장치: 1년치 상한
 
@@ -217,6 +218,14 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
     setState(() => _saving = true);
     try {
       final repo = ref.read(shiftRepositoryProvider);
+      // 일괄 생성은 여러 월에 걸칠 수 있음 — 시작 월만 snapshot (단순화).
+      // 다른 월에 만들어진 시프트는 undo로 복원되지 않을 수 있음을 감수.
+      final firstDate = drafts.first.startAt;
+      await ref.read(undoControllerProvider.notifier).snapshotBefore(
+            year: firstDate.year,
+            month: firstDate.month,
+            description: '반복 시프트 ${drafts.length}개 추가',
+          );
       final created = await repo.createBulk(jobId: job.id, drafts: drafts);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

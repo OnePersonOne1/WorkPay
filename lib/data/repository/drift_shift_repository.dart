@@ -94,4 +94,35 @@ class DriftShiftRepository implements ShiftRepository {
 
   @override
   Future<void> delete(int id) => _dao.deleteById(id);
+
+  @override
+  Future<int> deleteShiftsInMonth(int year, int month) =>
+      _dao.deleteByMonth(year, month);
+
+  @override
+  Future<int> deleteShiftsOfJob(int jobId) => _dao.deleteByJob(jobId);
+
+  @override
+  Future<void> replaceShiftsInMonth(
+      int year, int month, List<ent.Shift> shifts) {
+    return _dao.replaceMonth(
+      year,
+      month,
+      [
+        for (final s in shifts)
+          (
+            id: s.id,
+            jobId: s.jobId,
+            startAt: s.startAt,
+            endAt: s.endAt,
+            breakMinutes: s.breakMinutes,
+            breakStartAt: s.breakStartAt,
+            hourlyWageSnapshot: s.hourlyWageSnapshot,
+            memo: s.memo,
+            createdAt: s.createdAt,
+            updatedAt: s.updatedAt,
+          ),
+      ],
+    );
+  }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/palette/job_colors.dart';
 import '../../core/time/time_format.dart';
+import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../settings/settings_providers.dart';
@@ -15,6 +17,7 @@ import 'payroll_providers.dart';
 import 'recurring_shift_sheet.dart';
 import 'schedule_providers.dart';
 import 'shift_edit_sheet.dart';
+import 'undo_controller.dart';
 import 'year_month_picker.dart';
 
 class SchedulePage extends ConsumerWidget {
@@ -29,6 +32,25 @@ class SchedulePage extends ConsumerWidget {
     );
     final selectedDate = ref.watch(selectedDateProvider);
 
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+          _performUndo(context, ref);
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: _scaffold(context, ref, hasJobs, selectedDate),
+      ),
+    );
+  }
+
+  Widget _scaffold(
+    BuildContext context,
+    WidgetRef ref,
+    bool hasJobs,
+    DateTime selectedDate,
+  ) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('일정표'),
@@ -44,7 +66,8 @@ class SchedulePage extends ConsumerWidget {
             label: const Text('급여 명세'),
             onPressed: () => pushMonthlyReportDetail(context),
           ),
-          const SizedBox(width: 8),
+          const _OverflowMenu(),
+          const SizedBox(width: 4),
         ],
       ),
       body: ListView(
@@ -233,6 +256,114 @@ class _VisibilityToggles extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+Future<void> _performUndo(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final entry = await ref.read(undoControllerProvider.notifier).undo();
+  if (entry == null) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('되돌릴 작업이 없어요')),
+    );
+    return;
+  }
+  messenger.showSnackBar(
+    SnackBar(content: Text('되돌림: ${entry.description}')),
+  );
+}
+
+Future<void> _deleteMonthShifts(BuildContext context, WidgetRef ref) async {
+  final month = ref.read(selectedMonthProvider);
+  final messenger = ScaffoldMessenger.of(context);
+  final repo = ref.read(shiftRepositoryProvider);
+  final existing = await repo.watchShiftsInMonth(month.year, month.month).first;
+  if (existing.isEmpty) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('${month.year}년 ${month.month}월에 시프트가 없어요')),
+    );
+    return;
+  }
+  if (!context.mounted) return;
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('${month.year}년 ${month.month}월 시프트 전체 삭제'),
+      content: Text(
+        '이 달의 시프트 ${existing.length}개를 모두 삭제할까요?\n\n'
+        '되돌리기로 복원할 수 있어요 (최근 5개 동작까지).',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton.tonal(
+          style: FilledButton.styleFrom(
+            foregroundColor: Theme.of(ctx).colorScheme.error,
+          ),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('삭제'),
+        ),
+      ],
+    ),
+  );
+  if (confirm != true) return;
+  await ref.read(undoControllerProvider.notifier).snapshotBefore(
+        year: month.year,
+        month: month.month,
+        description: '${month.year}년 ${month.month}월 시프트 ${existing.length}개 삭제',
+      );
+  final count = await repo.deleteShiftsInMonth(month.year, month.month);
+  messenger.showSnackBar(
+    SnackBar(content: Text('$count개 시프트 삭제됨')),
+  );
+}
+
+class _OverflowMenu extends ConsumerWidget {
+  const _OverflowMenu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canUndo = ref.watch(undoControllerProvider).isNotEmpty;
+    final lastDesc = canUndo
+        ? ref.watch(undoControllerProvider).last.description
+        : null;
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      tooltip: '추가 작업',
+      onSelected: (v) {
+        switch (v) {
+          case 'undo':
+            _performUndo(context, ref);
+          case 'deleteMonth':
+            _deleteMonthShifts(context, ref);
+        }
+      },
+      itemBuilder: (ctx) => [
+        PopupMenuItem(
+          value: 'undo',
+          enabled: canUndo,
+          child: ListTile(
+            leading: const Icon(Icons.undo),
+            title: const Text('되돌리기 (Ctrl+Z)'),
+            subtitle: Text(
+              canUndo ? lastDesc! : '되돌릴 작업 없음',
+              style: const TextStyle(fontSize: 12),
+            ),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'deleteMonth',
+          child: ListTile(
+            leading: Icon(Icons.delete_sweep_outlined),
+            title: Text('이 달 시프트 전체 삭제'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
     );
   }
 }

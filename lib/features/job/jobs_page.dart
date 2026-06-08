@@ -142,6 +142,14 @@ class _JobTile extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
             ),
           ),
+          const PopupMenuItem(
+            value: _JobMenuAction.deleteAllShifts,
+            child: ListTile(
+              leading: Icon(Icons.delete_sweep_outlined),
+              title: Text('이 근무처 시프트 전체 삭제'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
         ],
       ),
       onTap: () => showJobEditSheet(context, job: job),
@@ -172,8 +180,46 @@ class _JobTile extends ConsumerWidget {
             SnackBar(content: Text('"${job.name}" 복원됨')),
           );
         }
+      case _JobMenuAction.deleteAllShifts:
+        await _deleteAllShifts(context, ref);
+    }
+  }
+
+  Future<void> _deleteAllShifts(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('"${job.name}" 시프트 전체 삭제'),
+        content: const Text(
+          '이 근무처의 모든 시프트(과거 포함)를 삭제합니다.\n'
+          '근무처 자체는 남습니다.\n\n'
+          '※ 되돌리기는 같은 달 단위로만 동작하므로\n'
+          '   여러 달에 걸친 삭제는 일부만 복원될 수 있어요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    final count =
+        await ref.read(shiftRepositoryProvider).deleteShiftsOfJob(job.id);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$count개 시프트 삭제됨')),
+      );
     }
   }
 }
 
-enum _JobMenuAction { edit, archive, unarchive }
+enum _JobMenuAction { edit, archive, unarchive, deleteAllShifts }
