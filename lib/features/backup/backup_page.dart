@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../settings/settings_providers.dart';
@@ -64,22 +67,44 @@ class BackupPage extends ConsumerWidget {
       final filename =
           'salary_app_backup_${_yyyymmdd(now)}_${_hhmm(now)}.json';
       final encoded = Uint8List.fromList(utf8.encode(jsonStr));
-      final path = await FilePicker.saveFile(
-        dialogTitle: l.backupExport,
-        fileName: filename,
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        bytes: encoded,
-      );
-      if (path == null) return;
-      final file = File(path);
-      if (!await file.exists() || (await file.length()) == 0) {
+
+      // Android/iOS: 시스템 저장 다이얼로그가 없어 공유 시트로 내보낸다.
+      // 데스크톱: 저장 위치 선택 다이얼로그로 직접 파일을 쓴다.
+      if (Platform.isAndroid || Platform.isIOS) {
+        final dir = await getTemporaryDirectory();
+        final file = File(p.join(dir.path, filename));
         await file.writeAsBytes(encoded);
+        final result = await SharePlus.instance.share(
+          ShareParams(
+            subject: filename,
+            files: [
+              XFile(
+                file.path,
+                mimeType: 'application/json',
+                name: filename,
+              ),
+            ],
+          ),
+        );
+        if (result.status == ShareResultStatus.dismissed) return;
+        await service.markBackedUp(now.toUtc());
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.backupExportSaved(filename))),
+        );
+      } else {
+        final location = await getSaveLocation(
+          suggestedName: filename,
+          acceptedTypeGroups: const [
+            XTypeGroup(label: 'JSON', extensions: ['json']),
+          ],
+        );
+        if (location == null) return;
+        await File(location.path).writeAsBytes(encoded);
+        await service.markBackedUp(now.toUtc());
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.backupExportSaved(location.path))),
+        );
       }
-      await service.markBackedUp(now.toUtc());
-      messenger.showSnackBar(
-        SnackBar(content: Text(l.backupExportSaved(path))),
-      );
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(l.backupExportFailed(e.toString()))),
@@ -92,15 +117,17 @@ class BackupPage extends ConsumerWidget {
     final service = ref.read(backupServiceProvider);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final picked = await FilePicker.pickFiles(
-        dialogTitle: l.backupImport,
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        withData: true,
+      final picked = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'JSON',
+            extensions: ['json'],
+            mimeTypes: ['application/json'],
+          ),
+        ],
       );
-      if (picked == null || picked.files.isEmpty) return;
-      final file = picked.files.single;
-      final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
       final jsonStr = utf8.decode(bytes);
 
       final data = service.parse(jsonStr);
