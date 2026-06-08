@@ -12,6 +12,7 @@ import '../job/job_providers.dart';
 import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
 import 'schedule_providers.dart';
+import 'shift_edit_sheet.dart' show showOverlapDialog;
 import 'undo_controller.dart';
 
 const int _kMaxBulkShifts = 366; // 안전장치: 1년치 상한
@@ -180,35 +181,30 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
       for (final (y, m) in months) {
         existing.addAll(await repo.watchShiftsInMonth(y, m).first);
       }
-      bool overlapsAny(DateTime s, DateTime e) {
+
+      // 충돌하는 기존 시프트 list (중복 제거)
+      final conflictingExisting = <Shift>{};
+      for (final d in drafts) {
         for (final ex in existing) {
           final exStart = ex.startAt.toLocal();
           final exEnd = ex.endAt.toLocal();
-          if (s.isBefore(exEnd) && exStart.isBefore(e)) return true;
+          if (d.startAt.isBefore(exEnd) && exStart.isBefore(d.endAt)) {
+            conflictingExisting.add(ex);
+          }
         }
-        return false;
       }
-
-      final conflicts = drafts.where((d) => overlapsAny(d.startAt, d.endAt)).length;
-      if (conflicts > 0) {
+      if (conflictingExisting.isNotEmpty) {
         if (mounted) {
-          await showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('시간이 겹쳐요'),
-              content: Text(
-                '$conflicts개 시프트가 기존과 시간이 겹쳐요.\n\n'
-                '겹치는 기존 시프트는 그대로 보존됩니다.\n'
-                '겹침을 허용하려면 설정 → 고급 설정에서 '
-                '"시프트 시간 겹침 허용"을 켜세요.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('닫기'),
-                ),
-              ],
-            ),
+          final jobs = await ref.read(activeJobsProvider.future);
+          final jobsById = {for (final j in jobs) j.id: j};
+          final use24 = ref.read(use24HourFormatProvider);
+          if (!mounted) return;
+          await showOverlapDialog(
+            context,
+            conflictingExisting.toList()
+              ..sort((a, b) => a.startAt.compareTo(b.startAt)),
+            jobsById,
+            use24,
           );
         }
         return;

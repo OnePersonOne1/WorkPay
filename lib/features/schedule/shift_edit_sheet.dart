@@ -12,9 +12,89 @@ import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
 import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
-import 'schedule_page.dart' show confirmShiftDelete;
 import 'schedule_providers.dart';
 import 'undo_controller.dart';
+
+/// 겹침 알림 dialog — 충돌하는 시프트들을 색 dot + 근무처명 + 시간으로 나열.
+Future<void> showOverlapDialog(
+  BuildContext context,
+  List<Shift> conflicts,
+  Map<int, Job> jobsById,
+  bool use24Hour,
+) {
+  String fmt(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    if (use24Hour) return '$h:$m';
+    final ampm = dt.hour < 12 ? '오전' : '오후';
+    final h12 = (dt.hour % 12 == 0 ? 12 : dt.hour % 12);
+    return '$ampm $h12:$m';
+  }
+
+  final shown = conflicts.take(5).toList();
+  final more = conflicts.length - shown.length;
+  return showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('시간이 겹쳐요'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('아래 시프트와 시간이 겹칩니다:'),
+          const SizedBox(height: 8),
+          for (final s in shown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 6,
+                    backgroundColor: jobsById[s.jobId] == null
+                        ? Colors.grey
+                        : JobColors.fromArgb(jobsById[s.jobId]!.colorArgb),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${jobsById[s.jobId]?.name ?? "(삭제된 근무처)"}'
+                      '  ${fmt(s.startAt.toLocal())}~${fmt(s.endAt.toLocal())}',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (more > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 18),
+              child: Text(
+                '... 외 $more개 더',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          const Text(
+            '겹치는 기존 시프트는 그대로 보존됩니다.\n'
+            '겹침을 허용하려면 설정 → 고급 설정에서 '
+            '"시프트 시간 겹침 허용"을 켜세요.',
+            style: TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('닫기'),
+        ),
+      ],
+    ),
+  );
+}
 
 /// 시프트 생성/편집 modal sheet.
 /// [shift]이 null이면 생성, 아니면 편집. [defaultDate]는 새 시프트의 기본 시작 날짜.
@@ -273,32 +353,19 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
           .watchShiftsInMonth(startAt.year, startAt.month)
           .first;
       final excludeId = widget.initial?.id;
-      final hasOverlap = existing.any((s) {
+      final conflicts = existing.where((s) {
         if (s.id == excludeId) return false;
         final sStart = s.startAt.toLocal();
         final sEnd = s.endAt.toLocal();
         return startAt.isBefore(sEnd) && sStart.isBefore(endAt);
-      });
-      if (hasOverlap) {
+      }).toList();
+      if (conflicts.isNotEmpty) {
         if (mounted) {
-          await showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('시간이 겹쳐요'),
-              content: const Text(
-                '같은 시간대에 이미 추가된 시프트가 있어요.\n\n'
-                '겹치는 시프트는 그대로 보존됩니다.\n'
-                '겹침을 허용하려면 설정 → 고급 설정에서 '
-                '"시프트 시간 겹침 허용"을 켜세요.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('닫기'),
-                ),
-              ],
-            ),
-          );
+          final jobs = await ref.read(activeJobsProvider.future);
+          final jobsById = {for (final j in jobs) j.id: j};
+          final use24 = ref.read(use24HourFormatProvider);
+          if (!mounted) return;
+          await showOverlapDialog(context, conflicts, jobsById, use24);
         }
         return;
       }
@@ -352,8 +419,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
   Future<void> _delete() async {
     final initial = widget.initial;
     if (initial == null) return;
-    final ok = await confirmShiftDelete(context);
-    if (!ok || !mounted) return;
+    // 개별 삭제 — 확인 없이 즉시 삭제 + SnackBar
     setState(() => _deleting = true);
     try {
       final startLocal = initial.startAt.toLocal();
@@ -363,7 +429,14 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
             description: '시프트 삭제',
           );
       await ref.read(shiftRepositoryProvider).delete(initial.id);
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('삭제 완료. 되돌리기로 되돌릴 수 있어요.'),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _deleting = false);

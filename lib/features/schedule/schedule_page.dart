@@ -77,7 +77,7 @@ class SchedulePage extends ConsumerWidget {
           }),
           TextButton.icon(
             icon: const Icon(Icons.delete_sweep_outlined),
-            label: const Text('초기화'),
+            label: const Text('이번 달 근무 초기화'),
             onPressed: () => _deleteMonthShifts(context, ref),
           ),
           const SizedBox(width: 4),
@@ -271,55 +271,6 @@ class _VisibilityToggles extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// 시프트 단건 삭제 시 2단계 확인.
-/// 첫 단계: "삭제할까요?" → 다음.
-/// 두 번째: "정말 진행합니까? 되돌리기로 되돌릴 수 있어요." → 삭제.
-Future<bool> confirmShiftDelete(BuildContext context) async {
-  final scheme = Theme.of(context).colorScheme;
-  final first = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('시프트 삭제'),
-      content: const Text('이 시프트를 삭제할까요?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('취소'),
-        ),
-        FilledButton.tonal(
-          style: FilledButton.styleFrom(foregroundColor: scheme.error),
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('계속'),
-        ),
-      ],
-    ),
-  );
-  if (first != true) return false;
-  if (!context.mounted) return false;
-  final second = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('정말 진행합니까?'),
-      content: const Text('되돌리기로 되돌릴 수 있어요.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('취소'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: scheme.error,
-            foregroundColor: scheme.onError,
-          ),
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('삭제'),
-        ),
-      ],
-    ),
-  );
-  return second == true;
 }
 
 Future<void> _performUndo(BuildContext context, WidgetRef ref) async {
@@ -1145,14 +1096,12 @@ class _ShiftList extends ConsumerWidget {
   }
 }
 
-/// _ShiftList에서 휴지통 탭 시 호출. 2단계 확인 → snapshot → delete.
+/// _ShiftList에서 휴지통 탭 시 호출. 묻지 않고 즉시 삭제 + SnackBar (되돌리기 액션 포함).
 Future<void> _deleteSingleShift(
   BuildContext context,
   WidgetRef ref,
   Shift s,
 ) async {
-  final ok = await confirmShiftDelete(context);
-  if (!ok || !context.mounted) return;
   final startLocal = s.startAt.toLocal();
   await ref.read(undoControllerProvider.notifier).snapshotBefore(
         year: startLocal.year,
@@ -1162,7 +1111,13 @@ Future<void> _deleteSingleShift(
   await ref.read(shiftRepositoryProvider).delete(s.id);
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('시프트가 삭제됨')),
+      SnackBar(
+        content: const Text('삭제 완료. 되돌리기로 되돌릴 수 있어요.'),
+        action: SnackBarAction(
+          label: '되돌리기',
+          onPressed: () => _performUndo(context, ref),
+        ),
+      ),
     );
   }
 }
