@@ -1148,6 +1148,12 @@ abstract class AppLocalizations {
   /// **'언어'**
   String get settingsSectionLanguage;
 
+  /// No description provided for @settingsLanguageSystem.
+  ///
+  /// In ko, this message translates to:
+  /// **'시스템 설정 따름'**
+  String get settingsLanguageSystem;
+
   /// No description provided for @settingsLanguageKo.
   ///
   /// In ko, this message translates to:

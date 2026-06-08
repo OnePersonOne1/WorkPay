@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Wagely';
+  String get appTitle => 'WorkPay';
 
   @override
   String get actionSave => 'Save';
@@ -625,6 +625,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSectionLanguage => 'Language';
+
+  @override
+  String get settingsLanguageSystem => 'Follow system';
 
   @override
   String get settingsLanguageKo => '한국어';

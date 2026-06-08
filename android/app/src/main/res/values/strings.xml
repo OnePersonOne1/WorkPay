@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 기본(영어권) 런처 이름. 한국어 기기는 values-ko/strings.xml의 값을 사용. -->
+    <string name="app_name">WorkPay</string>
+</resources>

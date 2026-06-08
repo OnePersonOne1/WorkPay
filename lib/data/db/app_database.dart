@@ -79,6 +79,8 @@ class AppDatabase extends _$AppDatabase {
               id: const Value(1),
               schemaVersion: kCurrentSchemaVersion,
               themeMode: const Value('light'),
+              // '' = 기기 시스템 로케일 따름 (영어권 기기 → 영어, 한국 → 한국어).
+              locale: const Value(''),
               updatedAt: now,
             ),
           );

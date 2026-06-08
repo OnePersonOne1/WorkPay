@@ -66,13 +66,22 @@ class _LocaleTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final isKo = current == 'ko';
+    final subtitle = switch (current) {
+      'ko' => l.settingsLanguageKo,
+      'en' => l.settingsLanguageEn,
+      _ => l.settingsLanguageSystem,
+    };
     return ListTile(
       leading: const Icon(Icons.language),
       title: Text(l.settingsSectionLanguage),
-      subtitle: Text(isKo ? l.settingsLanguageKo : l.settingsLanguageEn),
+      subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
+        Widget option(String value, String label) => ListTile(
+              title: Text(label),
+              trailing: current == value ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.of(context).pop(value),
+            );
         final picked = await showModalBottomSheet<String>(
           context: context,
           showDragHandle: true,
@@ -80,16 +89,9 @@ class _LocaleTile extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  title: Text(l.settingsLanguageKo),
-                  trailing: isKo ? const Icon(Icons.check) : null,
-                  onTap: () => Navigator.of(ctx).pop('ko'),
-                ),
-                ListTile(
-                  title: Text(l.settingsLanguageEn),
-                  trailing: !isKo ? const Icon(Icons.check) : null,
-                  onTap: () => Navigator.of(ctx).pop('en'),
-                ),
+                option('', l.settingsLanguageSystem),
+                option('ko', l.settingsLanguageKo),
+                option('en', l.settingsLanguageEn),
                 const SizedBox(height: 8),
               ],
             ),
@@ -98,8 +100,8 @@ class _LocaleTile extends ConsumerWidget {
         if (picked != null && picked != current) {
           final repo = ref.read(appSettingsRepositoryProvider);
           final settings = await repo.read();
-          // 영어로 전환 시 노동법 모드도 OFF (사용자가 다시 켤 수 있음).
-          // 한국어로 전환 시 그대로 둠 (다국적 사용자 가능).
+          // 영어로 명시 전환 시 노동법 모드도 OFF (사용자가 다시 켤 수 있음).
+          // 한국어/시스템 선택 시 노동법 모드는 그대로 둠.
           await repo.update(
             settings.copyWith(
               locale: picked,

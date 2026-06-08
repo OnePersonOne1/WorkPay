@@ -233,6 +233,7 @@
 
   "settingsTitle": "설정",
   "settingsSectionLanguage": "언어",
+  "settingsLanguageSystem": "시스템 설정 따름",
   "settingsLanguageKo": "한국어",
   "settingsLanguageEn": "English",
   "settingsSectionTheme": "테마",

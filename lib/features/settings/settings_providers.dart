@@ -31,11 +31,12 @@ final use24HourFormatProvider = Provider<bool>((ref) {
 });
 
 /// MaterialApp에 전달할 locale. AppSettings.locale 기반.
-final localeProvider = Provider<Locale>((ref) {
+/// 빈 문자열('')이면 null을 반환 → MaterialApp이 기기 시스템 로케일을 따른다.
+final localeProvider = Provider<Locale?>((ref) {
   final async = ref.watch(appSettingsProvider);
   return async.maybeWhen(
-    data: (s) => Locale(s.locale),
-    orElse: () => const Locale('ko'),
+    data: (s) => s.locale.isEmpty ? null : Locale(s.locale),
+    orElse: () => null,
   );
 });
 

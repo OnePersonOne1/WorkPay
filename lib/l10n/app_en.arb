@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Wagely",
+  "appTitle": "WorkPay",
 
   "actionSave": "Save",
   "actionCancel": "Cancel",
@@ -233,6 +233,7 @@
 
   "settingsTitle": "Settings",
   "settingsSectionLanguage": "Language",
+  "settingsLanguageSystem": "Follow system",
   "settingsLanguageKo": "한국어",
   "settingsLanguageEn": "English",
   "settingsSectionTheme": "Theme",

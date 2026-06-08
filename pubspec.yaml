@@ -109,7 +109,7 @@ flutter:
 # 오프라인 앱이라 capabilities를 비워 internetClient 등 네트워크 권한을 제거한다.
 # Microsoft Store 제출 시 identity_name / publisher 는 Partner Center 값으로 교체 필요.
 msix_config:
-  display_name: 월급이
+  display_name: WorkPay
   publisher_display_name: OnePersonOne1
   identity_name: io.github.onepersonone1.salaryapp
   msix_version: 1.0.0.0
