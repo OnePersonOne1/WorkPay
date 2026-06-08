@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -5,8 +6,10 @@ import 'package:intl/intl.dart';
 import '../../core/money/money.dart';
 import '../../core/palette/job_colors.dart';
 import '../../domain/payroll/monthly_computation.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'monthly_report_bundle.dart';
 import 'payroll_providers.dart';
+import 'plan_providers.dart';
 import 'schedule_providers.dart';
 import 'year_month_picker.dart';
 
@@ -18,15 +21,17 @@ class MonthlyReportDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
-    final asyncBundle = ref.watch(monthlyReportBundleProvider);
+    // 보기용 plan: 페이지가 autoDispose이므로 진입 시 항상 0(메인)으로 리셋됨.
+    final asyncBundle = ref.watch(reportBundleProvider);
 
+    final l = AppLocalizations.of(context);
     return asyncBundle.when(
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('급여 명세')),
-        body: Center(child: Text('계산 오류: $e')),
+        appBar: AppBar(title: Text(l.reportTitle)),
+        body: Center(child: Text(l.reportCalcError(e.toString()))),
       ),
       data: (bundle) => _DetailScaffold(month: month, bundle: bundle),
     );
@@ -52,8 +57,9 @@ class _DetailScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final tabs = <Widget>[
-      const Tab(text: '전체'),
+      Tab(text: l.reportTabAll),
       for (final entry in bundle.perJob)
         Tab(
           child: Row(
@@ -74,20 +80,20 @@ class _DetailScaffold extends ConsumerWidget {
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('급여 명세'),
+          title: Text(l.reportTitle),
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(96),
+            preferredSize: const Size.fromHeight(140),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 월 이동 행 — 이전/다음 달 텍스트 라벨 + 년월 변경 버튼
+                const _ReportPlanSelector(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
                   child: Row(
                     children: [
                       TextButton.icon(
                         icon: const Icon(Icons.chevron_left, size: 18),
-                        label: const Text('이전 달'),
+                        label: Text(l.schedulePrevMonth),
                         onPressed: () => _shift(ref, -1),
                       ),
                       Expanded(
@@ -101,7 +107,7 @@ class _DetailScaffold extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '${month.year}년 ${month.month}월',
+                                  DateFormat.yMMMM(l.localeName).format(month),
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -111,7 +117,7 @@ class _DetailScaffold extends ConsumerWidget {
                                 const Icon(Icons.arrow_drop_down, size: 22),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '년월 이동',
+                                  l.scheduleYearMonthMove,
                                   style: TextStyle(
                                     color: Theme.of(context)
                                         .colorScheme
@@ -126,7 +132,7 @@ class _DetailScaffold extends ConsumerWidget {
                       ),
                       TextButton.icon(
                         icon: const Icon(Icons.chevron_right, size: 18),
-                        label: const Text('다음 달'),
+                        label: Text(l.scheduleNextMonth),
                         onPressed: () => _shift(ref, 1),
                       ),
                     ],
@@ -147,7 +153,7 @@ class _DetailScaffold extends ConsumerWidget {
           children: [
             _BreakdownView(
               computation: bundle.combined,
-              jobLabel: bundle.perJob.isEmpty ? null : '모든 근무처 합산',
+              jobLabel: bundle.perJob.isEmpty ? null : l.reportAllJobsCombined,
             ),
             for (final entry in bundle.perJob)
               _BreakdownView(
@@ -168,16 +174,17 @@ class _BreakdownView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final r = computation.report;
-    final f = NumberFormat.decimalPattern('ko_KR');
+    final f = NumberFormat.decimalPattern(l.localeName);
     if (r.totalWorkMinutes == 0) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
             jobLabel == null
-                ? '이 달에 근무 기록이 없어요'
-                : '$jobLabel — 이 달에 근무 기록이 없어요',
+                ? l.reportNoRecords
+                : l.reportNoRecordsJob(jobLabel!),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
@@ -185,20 +192,22 @@ class _BreakdownView extends StatelessWidget {
       );
     }
     final premiums = <_Item>[
-      _Item('기본급', '근무 시간 × 시급', r.basePay),
-      _Item('야간 가산수당', '22:00~06:00 근무에 +50%', r.nightPremium),
-      _Item('일 연장 가산수당', '하루 8h 초과분에 +50%', r.dailyOvertimePremium),
-      _Item('주 연장 가산수당', '주 40h 초과분에 +50% (일 OT와 중복 안 됨)',
-          r.weeklyOvertimePremium),
-      _Item('휴일근로 가산수당 (≤8h)', '휴일 근무 8시간 이내 +50%',
+      _Item(l.reportItemBasePay, l.reportItemBasePayHint, r.basePay),
+      _Item(l.reportItemNight, l.reportItemNightHint, r.nightPremium),
+      _Item(l.reportItemDailyOT, l.reportItemDailyOTHint, r.dailyOvertimePremium),
+      _Item(l.reportItemWeeklyOT, l.reportItemWeeklyOTHint, r.weeklyOvertimePremium),
+      _Item(l.reportItemHolidayWithin, l.reportItemHolidayWithinHint,
           r.holidayPremiumWithinThreshold),
-      _Item('휴일근로 가산수당 (>8h)', '휴일 근무 8시간 초과분 +100%',
+      _Item(l.reportItemHolidayOver, l.reportItemHolidayOverHint,
           r.holidayPremiumOverThreshold),
-      _Item('주휴수당', '주 15h+ 결근 없을 때 1일분', r.weeklyHolidayAllowance),
+      _Item(l.reportItemWeeklyHoliday, l.reportItemWeeklyHolidayHint,
+          r.weeklyHolidayAllowance),
     ];
     final deductions = <_Item>[
-      _Item('사업소득 원천징수', '3.3% (소득세 + 지방소득세)', r.businessIncomeWithholding),
-      _Item('4대보험', '국민연금 + 건강 + 고용 + 장기요양', r.fourInsuranceDeduction),
+      _Item(l.reportItemBusinessIncome, l.reportItemBusinessIncomeHint,
+          r.businessIncomeWithholding),
+      _Item(l.reportItemFourInsurance, l.reportItemFourInsuranceHint,
+          r.fourInsuranceDeduction),
     ];
 
     return ListView(
@@ -206,18 +215,21 @@ class _BreakdownView extends StatelessWidget {
       children: [
         _NetCard(net: r.netPay, gross: r.grossPay, totalMinutes: r.totalWorkMinutes),
         const SizedBox(height: 16),
-        _SectionTitle('지급 항목'),
+        _SectionTitle(l.reportPaymentItems),
         for (final item in premiums) _ItemRow(item: item),
         const Divider(height: 32),
-        _RowKV(label: '총 지급 (gross)', value: '${f.format(r.grossPay.won)}원',
+        _RowKV(label: l.reportGrossLabel,
+            value: l.reportTotalAmount(f.format(r.grossPay.won)),
             emphasize: true),
         if (r.totalDeduction.won > 0) ...[
           const SizedBox(height: 16),
-          _SectionTitle('공제 항목'),
+          _SectionTitle(l.reportDeductionItems),
           for (final item in deductions)
             if (item.amount.won > 0) _ItemRow(item: item),
           const Divider(height: 32),
-          _RowKV(label: '총 공제', value: '-${f.format(r.totalDeduction.won)}원',
+          _RowKV(
+              label: l.reportTotalDeductionLabel,
+              value: l.reportNegativeAmount(f.format(r.totalDeduction.won)),
               emphasize: true),
         ],
         const SizedBox(height: 24),
@@ -230,7 +242,7 @@ class _BreakdownView extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '실수령',
+                l.reportNetLabel,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.w600,
@@ -238,7 +250,7 @@ class _BreakdownView extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${f.format(r.netPay.won)}원',
+                l.reportTotalAmount(f.format(r.netPay.won)),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.w800,
@@ -249,7 +261,7 @@ class _BreakdownView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          '* 일급 표시는 기본급+야간+일OT+휴일 가산만 합산되며, 주OT·주휴·공제는 월 단위로만 적용됩니다.',
+          l.reportFootnote,
           style: TextStyle(
             fontSize: 11,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -273,8 +285,9 @@ class _ItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final f = NumberFormat.decimalPattern('ko_KR');
+    final f = NumberFormat.decimalPattern(l.localeName);
     final isZero = item.amount.won == 0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -304,7 +317,7 @@ class _ItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            '${f.format(item.amount.won)}원',
+            l.reportTotalAmount(f.format(item.amount.won)),
             style: TextStyle(
               color: isZero ? scheme.onSurfaceVariant : null,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -382,7 +395,8 @@ class _NetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final f = NumberFormat.decimalPattern('ko_KR');
+    final l = AppLocalizations.of(context);
+    final f = NumberFormat.decimalPattern(l.localeName);
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
     return Container(
@@ -396,7 +410,7 @@ class _NetCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '실 근무 $h시간${m == 0 ? '' : ' $m분'}',
+            l.reportWorkTimeLabel(h, m == 0 ? '' : l.reportWorkMinutesSuffix(m)),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 13,
@@ -404,7 +418,7 @@ class _NetCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${f.format(net.won)}원',
+            l.reportTotalAmount(f.format(net.won)),
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -412,7 +426,7 @@ class _NetCard extends StatelessWidget {
           ),
           if (gross.won != net.won)
             Text(
-              '공제 전 ${f.format(gross.won)}원',
+              l.scheduleGrossBefore(f.format(gross.won)),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 12,
@@ -429,4 +443,73 @@ void pushMonthlyReportDetail(BuildContext context) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => const MonthlyReportDetailPage()),
   );
+}
+
+/// 급여 명세서 상단의 보기 plan 선택자.
+/// 기본값 메인. 활성 plan과 독립 — 페이지 닫으면 리셋.
+class _ReportPlanSelector extends ConsumerWidget {
+  const _ReportPlanSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final selected = ref.watch(reportPlanIdProvider);
+    final mocksAsync = ref.watch(mockPlansForSelectedMonthProvider);
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: scheme.surfaceContainerLow,
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: Row(
+        children: [
+          const Icon(Icons.layers_outlined, size: 16),
+          const SizedBox(width: 8),
+          Text(l.reportViewPrefix, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: Text(l.planMain),
+            selected: selected == 0,
+            onSelected: (_) =>
+                ref.read(reportPlanIdProvider.notifier).set(0),
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: mocksAsync.maybeWhen(
+              data: (mocks) {
+                if (mocks.isEmpty) {
+                  return Text(
+                    l.reportNoMockThisMonth,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  );
+                }
+                return SizedBox(
+                  height: 32,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: mocks.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
+                    itemBuilder: (ctx, i) {
+                      final m = mocks[i];
+                      return ChoiceChip(
+                        label: Text(m.name),
+                        selected: selected == m.id,
+                        onSelected: (_) => ref
+                            .read(reportPlanIdProvider.notifier)
+                            .set(m.id),
+                        visualDensity: VisualDensity.compact,
+                      );
+                    },
+                  ),
+                );
+              },
+              orElse: () => const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

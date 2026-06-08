@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// 공제 방식. 비과세가 기본값.
 enum DeductionMode {
   none('비과세'),

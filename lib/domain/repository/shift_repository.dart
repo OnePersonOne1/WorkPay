@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../entity/shift.dart';
 
 /// 일괄 생성용 입력. memo만 공통이고 시각은 항목별.
@@ -18,12 +19,10 @@ class BulkShiftDraft {
 }
 
 abstract interface class ShiftRepository {
-  /// 지정된 연·월에 displayDate(=startAt 날짜)가 속하는 시프트들.
-  /// archived job의 시프트도 포함 (과거 기록 보존을 위해).
-  Stream<List<Shift>> watchShiftsInMonth(int year, int month);
+  /// 지정 plan + 월의 시프트들.
+  Stream<List<Shift>> watchShiftsInMonth(int year, int month, {required int planId});
 
-  /// 특정 날짜의 시프트만.
-  Stream<List<Shift>> watchShiftsOnDate(DateTime date);
+  Stream<List<Shift>> watchShiftsOnDate(DateTime date, {required int planId});
 
   Future<Shift?> findById(int id);
 
@@ -35,26 +34,42 @@ abstract interface class ShiftRepository {
     required int breakMinutes,
     DateTime? breakStartAt,
     String? memo,
+    required int planId,
   });
 
-  /// N개 시프트를 한 트랜잭션으로 생성. 같은 jobId, 같은 wage snapshot 사용.
-  /// 부분 실패 없음 — 하나라도 실패하면 전체 rollback.
   Future<List<Shift>> createBulk({
     required int jobId,
     required List<BulkShiftDraft> drafts,
+    required int planId,
   });
 
   Future<void> update(Shift shift);
 
   Future<void> delete(int id);
 
-  /// 특정 월의 모든 시프트 삭제. 반환: 삭제된 개수.
-  Future<int> deleteShiftsInMonth(int year, int month);
+  /// 지정 plan + 월의 모든 시프트 삭제.
+  Future<int> deleteShiftsInMonth(int year, int month, {required int planId});
 
-  /// 특정 근무처의 모든 시프트 삭제. 반환: 삭제된 개수.
+  /// 특정 근무처의 모든 시프트 삭제 (모든 plan 통틀어).
   Future<int> deleteShiftsOfJob(int jobId);
 
-  /// 특정 월의 시프트를 [shifts]로 통째로 교체. Undo 복원용.
-  /// id, hourlyWageSnapshot, createdAt 등 모든 필드 그대로 복원.
-  Future<void> replaceShiftsInMonth(int year, int month, List<Shift> shifts);
+  /// 지정 plan의 모든 시프트 삭제 (plan 자체 삭제 직전 호출).
+  Future<int> deleteShiftsOfPlan(int planId);
+
+  /// plan + 월의 시프트를 [shifts]로 통째로 교체. Undo 복원용.
+  Future<void> replaceShiftsInMonth(
+    int year,
+    int month, {
+    required int planId,
+    required List<Shift> shifts,
+  });
+
+  /// 한 plan의 한 달을 다른 plan으로 복제. 대상 plan의 그 달은 모두 삭제 후 복사.
+  /// 반환: 복사된 시프트 수.
+  Future<int> copyMonthBetweenPlans({
+    required int sourcePlanId,
+    required int targetPlanId,
+    required int year,
+    required int month,
+  });
 }

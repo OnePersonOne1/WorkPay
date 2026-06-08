@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../entity/monthly_report.dart';
 
 /// 월 단위 계산 결과의 풍부한 표현. UI에서 일/주별 표시에 사용.

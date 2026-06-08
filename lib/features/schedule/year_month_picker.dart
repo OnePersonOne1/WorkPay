@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../l10n/generated/app_localizations.dart';
 
 /// 년/월 선택 dialog — 숫자 입력 + 월 grid 동시 제공.
 ///
@@ -75,24 +78,24 @@ class _State extends State<_YearMonthPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('년/월 이동'),
+      title: Text(l.yearMonthPickerTitle),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       content: SizedBox(
         width: 340,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 숫자 입력 필드 (가로 2개)
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _yearCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '년도',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l.yearLabel,
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -113,9 +116,9 @@ class _State extends State<_YearMonthPickerDialog> {
                   width: 90,
                   child: TextField(
                     controller: _monthCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '월',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l.monthLabel,
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -145,7 +148,7 @@ class _State extends State<_YearMonthPickerDialog> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    '$_year년',
+                    '$_year',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -177,7 +180,7 @@ class _State extends State<_YearMonthPickerDialog> {
             ),
             const SizedBox(height: 4),
             Text(
-              '현재 선택: $_year년 $_month월',
+              '$_year-${_month.toString().padLeft(2, '0')}',
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
             ),
           ],
@@ -186,11 +189,11 @@ class _State extends State<_YearMonthPickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: Text(l.actionCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(DateTime(_year, _month)),
-          child: const Text('이동'),
+          child: Text(l.actionOk),
         ),
       ],
     );
@@ -218,7 +221,7 @@ class _MonthChip extends StatelessWidget {
         onTap: onTap,
         child: Center(
           child: Text(
-            '$month월',
+            '$month',
             style: TextStyle(
               color: selected ? scheme.onPrimary : scheme.onSurface,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

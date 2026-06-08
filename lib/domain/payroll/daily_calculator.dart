@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../core/time/work_segment.dart';
 import '../entity/job_payroll_options.dart';
 import 'payroll_constants.dart';

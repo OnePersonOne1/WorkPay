@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// 급여 계산에 사용되는 모든 상수. 한국 노동법 기본값을 [PayrollConstants.koreanDefault]로 제공.
 /// 향후 '고고급 설정'에서 사용자가 override할 수 있다.
 ///

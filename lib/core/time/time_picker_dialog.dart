@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../l10n/generated/app_localizations.dart';
 
 /// 다이얼 없는 시간 입력 dialog. 한 화면에 숫자 입력과 휠(드래그) 둘 다 제공.
 ///
@@ -99,15 +102,15 @@ class _State extends State<_TimePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('시간 선택'),
+      title: Text(l.shiftSheetStart),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       content: SizedBox(
         width: 320,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 숫자 직접 입력
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -116,14 +119,14 @@ class _State extends State<_TimePickerDialog> {
                     padding: const EdgeInsets.only(right: 8),
                     child: OutlinedButton(
                       onPressed: _togglePeriod,
-                      child: Text(_isPm(_value.hour) ? '오후' : '오전'),
+                      child: Text(_isPm(_value.hour) ? l.pmSuffix : l.amSuffix),
                     ),
                   ),
                 Expanded(
                   child: TextField(
                     controller: _hourCtrl,
                     decoration: const InputDecoration(
-                      labelText: '시',
+                      labelText: 'h',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -144,7 +147,7 @@ class _State extends State<_TimePickerDialog> {
                   child: TextField(
                     controller: _minCtrl,
                     decoration: const InputDecoration(
-                      labelText: '분',
+                      labelText: 'm',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -193,11 +196,11 @@ class _State extends State<_TimePickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: Text(l.actionCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_value),
-          child: const Text('확인'),
+          child: Text(l.actionOk),
         ),
       ],
     );

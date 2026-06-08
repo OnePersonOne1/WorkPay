@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';

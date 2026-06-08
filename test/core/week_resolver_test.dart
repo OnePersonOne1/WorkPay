@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter_test/flutter_test.dart';
 import 'package:salary_app/core/time/week_resolver.dart';
 

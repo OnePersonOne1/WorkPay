@@ -1,17 +1,19 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:drift/drift.dart';
 
 import '../dao/app_settings_dao.dart';
 import '../dao/job_dao.dart';
+import '../dao/plan_dao.dart';
 import '../dao/shift_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
-const int kCurrentSchemaVersion = 4;
+const int kCurrentSchemaVersion = 6;
 
 @DriftDatabase(
-  tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable],
-  daos: [JobDao, ShiftDao, AppSettingsDao],
+  tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable, Plans],
+  daos: [JobDao, ShiftDao, AppSettingsDao, PlanDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
@@ -41,6 +43,23 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettingsTable,
               appSettingsTable.undoStackJson,
+            );
+          }
+          if (from < 5) {
+            // v5: plans 테이블 + shifts.planId + app_settings.activePlanId
+            await m.createTable(plans);
+            await m.addColumn(shifts, shifts.planId);
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.activePlanId,
+            );
+          }
+          if (from < 6) {
+            // v6: app_settings에 koreanLaborLawCompliance 컬럼 추가
+            // 기존 사용자는 한국인 가정 → 기본 true (현재 동작 그대로)
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.koreanLaborLawCompliance,
             );
           }
         },

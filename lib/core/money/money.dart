@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:intl/intl.dart';
 
 /// 원(KRW) 정수 금액. 부동소수점 누적오차를 막기 위해 항상 [int]로 보관한다.

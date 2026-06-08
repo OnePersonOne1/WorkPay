@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -18,7 +19,7 @@ class IncompatibleBackupException implements Exception {
 
   @override
   String toString() =>
-      '백업 파일의 스키마 버전($backupVersion)이 현재 앱($appVersion)과 달라 가져올 수 없어요.';
+      'Backup schema version ($backupVersion) does not match the current app ($appVersion).';
 }
 
 class BackupImportResult {
@@ -39,6 +40,7 @@ class BackupService {
     final jobs = await _db.select(_db.jobs).get();
     final options = await _db.select(_db.jobPayrollOptionsTable).get();
     final shifts = await _db.select(_db.shifts).get();
+    final plans = await _db.select(_db.plans).get();
     final settings = await _db.appSettingsDao.read();
 
     final data = BackupData(
@@ -87,6 +89,18 @@ class BackupService {
             memo: s.memo,
             createdAt: s.createdAt,
             updatedAt: s.updatedAt,
+            planId: s.planId,
+          ),
+      ],
+      plans: [
+        for (final p in plans)
+          PlanJson(
+            id: p.id,
+            year: p.year,
+            month: p.month,
+            name: p.name,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
           ),
       ],
       appSettings: AppSettingsJson(
@@ -97,6 +111,8 @@ class BackupService {
         payrollConstantsJson: settings.payrollConstantsJson,
         use24HourFormat: settings.use24HourFormat,
         updatedAt: settings.updatedAt,
+        activePlanId: settings.activePlanId,
+        koreanLaborLawCompliance: settings.koreanLaborLawCompliance,
       ),
     );
 
@@ -129,6 +145,21 @@ class BackupService {
       await _db.delete(_db.shifts).go();
       await _db.delete(_db.jobPayrollOptionsTable).go();
       await _db.delete(_db.jobs).go();
+      await _db.delete(_db.plans).go();
+
+      // plans는 shifts.planId가 참조할 수도 있어 먼저 삽입
+      for (final p in data.plans) {
+        await _db.into(_db.plans).insert(
+              PlansCompanion.insert(
+                id: Value(p.id),
+                year: p.year,
+                month: p.month,
+                name: p.name,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
+              ),
+            );
+      }
 
       // jobs는 FK 부모 — 먼저 삽입
       for (final j in data.jobs) {
@@ -175,6 +206,7 @@ class BackupService {
                 memo: Value(s.memo),
                 createdAt: s.createdAt,
                 updatedAt: s.updatedAt,
+                planId: Value(s.planId),
               ),
             );
       }
@@ -190,6 +222,9 @@ class BackupService {
           use24HourFormat: Value(data.appSettings.use24HourFormat),
           // undo 스택은 백업에 포함하지 않음 — 사용자 액션 이력일 뿐
           undoStackJson: const Value(null),
+          activePlanId: Value(data.appSettings.activePlanId),
+          koreanLaborLawCompliance:
+              Value(data.appSettings.koreanLaborLawCompliance),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );

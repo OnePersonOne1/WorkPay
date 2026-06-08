@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:drift/drift.dart' show Value;
 
 import '../../domain/entity/app_settings.dart' as ent;
@@ -6,6 +7,7 @@ import '../../domain/entity/deduction_mode.dart';
 import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart' as ent;
 import '../../domain/entity/job_payroll_options.dart' as ent;
+import '../../domain/entity/plan.dart' as ent;
 import '../../domain/entity/shift.dart' as ent;
 import '../db/app_database.dart' as db;
 
@@ -63,6 +65,8 @@ extension AppSettingsRowToEntity on db.AppSettingsTableData {
         payrollConstantsJson: payrollConstantsJson,
         use24HourFormat: use24HourFormat,
         undoStackJson: undoStackJson,
+        activePlanId: activePlanId,
+        koreanLaborLawCompliance: koreanLaborLawCompliance,
         updatedAt: updatedAt,
       );
 }
@@ -77,6 +81,8 @@ extension AppSettingsEntityToCompanion on ent.AppSettings {
         payrollConstantsJson: Value(payrollConstantsJson),
         use24HourFormat: Value(use24HourFormat),
         undoStackJson: Value(undoStackJson),
+        activePlanId: Value(activePlanId),
+        koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
         updatedAt: Value(updatedAt),
       );
 }
@@ -94,6 +100,17 @@ extension JobPayrollOptionsEntityToCompanion on ent.JobPayrollOptions {
         deductionMode: Value(deductionMode.name),
         fourInsuranceRate: Value(fourInsuranceRate),
         updatedAt: Value(updatedAt),
+      );
+}
+
+extension PlanRowToEntity on db.Plan {
+  ent.Plan toEntity() => ent.Plan(
+        id: id,
+        year: year,
+        month: month,
+        name: name,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
       );
 }
 

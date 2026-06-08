@@ -1,5 +1,5 @@
 name: salary_app
-description: "월급이 — 광고 없는 근무 일정·월급 계산 앱"
+description: "월급이 — 광고 없는 근무 일정·월급 계산 앱. 라이선스: GPL-3.0-only."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -63,6 +63,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  # flutter gen-l10n으로 lib/l10n/app_*.arb → AppLocalizations 클래스 생성.
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

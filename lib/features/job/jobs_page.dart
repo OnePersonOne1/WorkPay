@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/palette/job_colors.dart';
 import '../../data/providers.dart';
-import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'job_edit_sheet.dart';
 import 'job_providers.dart';
 
@@ -21,19 +22,19 @@ class _JobsPageState extends ConsumerState<JobsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final source = _showArchived ? allJobsProvider : activeJobsProvider;
     final asyncJobs = ref.watch(source);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('근무처 관리'),
+        title: Text(l.jobsTitle),
         actions: [
-          TextButton.icon(
+          IconButton(
             icon: Icon(
               _showArchived ? Icons.archive : Icons.archive_outlined,
-              size: 18,
             ),
-            label: Text(_showArchived ? '활성만' : '보관 포함'),
+            tooltip: l.jobsArchivedShow,
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
           const SizedBox(width: 8),
@@ -41,7 +42,7 @@ class _JobsPageState extends ConsumerState<JobsPage> {
       ),
       body: asyncJobs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('로드 오류: $e')),
+        error: (e, _) => Center(child: Text('Error: $e')),
         data: (jobs) {
           if (jobs.isEmpty) return const _EmptyState();
           return ListView.separated(
@@ -54,7 +55,7 @@ class _JobsPageState extends ConsumerState<JobsPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
-        label: const Text('근무처 추가'),
+        label: Text(l.jobsAdd),
         onPressed: () => showJobEditSheet(context),
       ),
     );
@@ -66,6 +67,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -74,13 +76,13 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Icon(Icons.work_outline, size: 48),
             const SizedBox(height: 12),
-            const Text(
-              '아직 근무처가 없습니다',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              l.jobsEmpty,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
-              '아래 "근무처 추가"로 첫 근무처를 등록하세요.',
+              l.jobsEmptyHint,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -99,14 +101,15 @@ class _JobTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wageFmt = NumberFormat.decimalPattern('ko_KR').format(job.hourlyWage);
+    final l = AppLocalizations.of(context);
+    final wageFmt = NumberFormat.decimalPattern(l.localeName).format(job.hourlyWage);
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: JobColors.fromArgb(job.colorArgb),
         radius: 14,
       ),
       title: Text(
-        job.name,
+        job.name + (job.archived ? ' ${l.jobsArchived}' : ''),
         style: TextStyle(
           decoration: job.archived ? TextDecoration.lineThrough : null,
           color: job.archived
@@ -114,43 +117,43 @@ class _JobTile extends ConsumerWidget {
               : null,
         ),
       ),
-      subtitle: Text(
-        job.incomeType == IncomeType.workStudy
-            ? '시급 ₩$wageFmt · 근로장학금'
-            : '시급 ₩$wageFmt',
-      ),
+      subtitle: Text(l.jobsWageLabel(wageFmt)),
       trailing: PopupMenuButton<_JobMenuAction>(
         onSelected: (action) => _handleMenu(context, ref, action),
-        itemBuilder: (ctx) => [
-          const PopupMenuItem(
-            value: _JobMenuAction.edit,
-            child: ListTile(
-              leading: Icon(Icons.edit_outlined),
-              title: Text('편집'),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-          PopupMenuItem(
-            value: job.archived
-                ? _JobMenuAction.unarchive
-                : _JobMenuAction.archive,
-            child: ListTile(
-              leading: Icon(
-                job.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+        itemBuilder: (ctx) {
+          final lc = AppLocalizations.of(ctx);
+          return [
+            PopupMenuItem(
+              value: _JobMenuAction.edit,
+              child: ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(lc.actionEdit),
+                contentPadding: EdgeInsets.zero,
               ),
-              title: Text(job.archived ? '복원' : '보관'),
-              contentPadding: EdgeInsets.zero,
             ),
-          ),
-          const PopupMenuItem(
-            value: _JobMenuAction.deleteAllShifts,
-            child: ListTile(
-              leading: Icon(Icons.delete_sweep_outlined),
-              title: Text('이 근무처 시프트 전체 삭제'),
-              contentPadding: EdgeInsets.zero,
+            PopupMenuItem(
+              value: job.archived
+                  ? _JobMenuAction.unarchive
+                  : _JobMenuAction.archive,
+              child: ListTile(
+                leading: Icon(
+                  job.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+                ),
+                title:
+                    Text(job.archived ? lc.jobsUnarchive : lc.jobsArchive),
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-        ],
+            PopupMenuItem(
+              value: _JobMenuAction.deleteAllShifts,
+              child: ListTile(
+                leading: const Icon(Icons.delete_sweep_outlined),
+                title: Text(lc.jobsDelete),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ];
+        },
       ),
       onTap: () => showJobEditSheet(context, job: job),
     );
@@ -161,6 +164,7 @@ class _JobTile extends ConsumerWidget {
     WidgetRef ref,
     _JobMenuAction action,
   ) async {
+    final l = AppLocalizations.of(context);
     switch (action) {
       case _JobMenuAction.edit:
         await showJobEditSheet(context, job: job);
@@ -168,7 +172,7 @@ class _JobTile extends ConsumerWidget {
         await ref.read(jobRepositoryProvider).setArchived(job.id, archived: true);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('"${job.name}" 보관됨')),
+            SnackBar(content: Text(l.jobsArchivedSnack(job.name))),
           );
         }
       case _JobMenuAction.unarchive:
@@ -177,7 +181,7 @@ class _JobTile extends ConsumerWidget {
             .setArchived(job.id, archived: false);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('"${job.name}" 복원됨')),
+            SnackBar(content: Text(l.jobsUnarchivedSnack(job.name))),
           );
         }
       case _JobMenuAction.deleteAllShifts:
@@ -186,37 +190,36 @@ class _JobTile extends ConsumerWidget {
   }
 
   Future<void> _deleteAllShifts(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('"${job.name}" 시프트 전체 삭제'),
-        content: const Text(
-          '이 근무처의 모든 시프트(과거 포함)를 삭제합니다.\n'
-          '근무처 자체는 남습니다.\n\n'
-          '※ 되돌리기는 같은 달 단위로만 동작하므로\n'
-          '   여러 달에 걸친 삭제는 일부만 복원될 수 있어요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
-          ),
-          FilledButton.tonal(
-            style: FilledButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
+      builder: (ctx) {
+        final lc = AppLocalizations.of(ctx);
+        return AlertDialog(
+          title: Text(lc.jobsDeleteConfirmTitle),
+          content: Text(lc.jobsDeleteConfirmBody(job.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(lc.actionCancel),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+            FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(lc.actionDelete),
+            ),
+          ],
+        );
+      },
     );
     if (confirm != true || !context.mounted) return;
     final count =
         await ref.read(shiftRepositoryProvider).deleteShiftsOfJob(job.id);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$count개 시프트 삭제됨')),
+        SnackBar(content: Text(l.scheduleDeletedCount(count))),
       );
     }
   }

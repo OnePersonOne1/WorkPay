@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// 주(week) 경계 계산. 주는 `weekStartsOn` 요일부터 시작하는 7일.
 /// 주 식별자는 "주 시작일(자정 로컬)" — Map 키로 안전하다.
 class WeekResolver {

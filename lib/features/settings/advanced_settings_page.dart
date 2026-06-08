@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,10 @@ import '../../core/time/time_format.dart';
 import '../../core/time/time_picker_dialog.dart';
 import '../../data/providers.dart';
 import '../../domain/payroll/payroll_constants.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'settings_providers.dart';
 
-/// PayrollConstants override 편집 화면 ("고고급 옵션").
+/// PayrollConstants override 편집 화면.
 class AdvancedSettingsPage extends ConsumerStatefulWidget {
   const AdvancedSettingsPage({super.key});
 
@@ -31,6 +33,7 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
   }
 
   Future<void> _save() async {
+    final l = AppLocalizations.of(context);
     setState(() => _saving = true);
     try {
       final repo = ref.read(appSettingsRepositoryProvider);
@@ -43,35 +46,39 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('고급 설정 저장됨')),
+        SnackBar(content: Text(l.advancedSaved)),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('저장 실패: $e')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
   Future<void> _resetToDefault() async {
+    final l = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('기본값으로 초기화'),
-        content: const Text('모든 항목을 한국 노동법 기본값으로 되돌릴까요?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('초기화'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final lc = AppLocalizations.of(ctx);
+        return AlertDialog(
+          title: Text(lc.advancedReset),
+          content: Text(lc.advancedHelp),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(lc.actionCancel),
+            ),
+            FilledButton.tonal(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(lc.advancedReset),
+            ),
+          ],
+        );
+      },
     );
     if (confirm != true) return;
     if (!mounted) return;
@@ -87,14 +94,14 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('기본값으로 초기화됨')),
+        SnackBar(content: Text(l.advancedResetDone)),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('초기화 실패: $e')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
@@ -102,10 +109,9 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
   @override
   Widget build(BuildContext context) {
     _ensureLoaded();
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('고급 설정'),
-      ),
+      appBar: AppBar(title: Text(l.advancedTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         children: [
@@ -113,76 +119,73 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
           const SizedBox(height: 12),
           _ResetTile(onPressed: _saving ? null : _resetToDefault),
           const SizedBox(height: 8),
-          const _SectionHeader('시간대 / 기준'),
+          _SectionHeader(l.advancedSectionThresholds),
           _TimeOfDayField(
-            label: '야간 시작',
+            label: l.advancedNightStart,
             minuteOfDay: _edited.nightStartMinuteOfDay,
             onChanged: (v) => setState(
                 () => _edited = _edited.copyWith(nightStartMinuteOfDay: v)),
           ),
           _TimeOfDayField(
-            label: '야간 종료',
+            label: l.advancedNightEnd,
             minuteOfDay: _edited.nightEndMinuteOfDay,
             onChanged: (v) => setState(
                 () => _edited = _edited.copyWith(nightEndMinuteOfDay: v)),
           ),
           _HoursField(
-            label: '일 연장 기준',
+            label: l.advancedDailyOTThreshold,
             minutes: _edited.dailyOvertimeThresholdMinutes,
             onChanged: (v) => setState(() =>
                 _edited = _edited.copyWith(dailyOvertimeThresholdMinutes: v)),
-            hint: '하루 이 시간을 초과하면 일 연장근로',
           ),
           _HoursField(
-            label: '주 연장 기준',
+            label: l.advancedWeeklyOTThreshold,
             minutes: _edited.weeklyOvertimeThresholdMinutes,
             onChanged: (v) => setState(() => _edited =
                 _edited.copyWith(weeklyOvertimeThresholdMinutes: v)),
-            hint: '한 주에 이 시간을 초과하면 주 연장근로',
           ),
           _HoursField(
-            label: '주휴수당 자격 시간',
+            label: l.advancedWeeklyHolidayHours,
             minutes: _edited.weeklyHolidayThresholdMinutes,
             onChanged: (v) => setState(() => _edited =
                 _edited.copyWith(weeklyHolidayThresholdMinutes: v)),
-            hint: '한 주 근무가 이 시간 이상이면 주휴수당 지급',
           ),
           const SizedBox(height: 16),
-          const _SectionHeader('가산율'),
+          _SectionHeader(l.advancedSectionPremiums),
           _PercentField(
-            label: '야간 가산율',
+            label: l.advancedNightPremiumPct,
             rateBp: _edited.nightPremiumRateBp,
             onChanged: (v) => setState(
                 () => _edited = _edited.copyWith(nightPremiumRateBp: v)),
           ),
           _PercentField(
-            label: '일 연장 가산율',
+            label: l.advancedDailyOTPremiumPct,
             rateBp: _edited.dailyOvertimePremiumRateBp,
             onChanged: (v) => setState(() =>
                 _edited = _edited.copyWith(dailyOvertimePremiumRateBp: v)),
           ),
           _PercentField(
-            label: '주 연장 가산율',
+            label: l.advancedWeeklyOTPremiumPct,
             rateBp: _edited.weeklyOvertimePremiumRateBp,
             onChanged: (v) => setState(() =>
                 _edited = _edited.copyWith(weeklyOvertimePremiumRateBp: v)),
           ),
           _PercentField(
-            label: '휴일근로 8h 이내 가산율',
+            label: l.advancedHolidayBasePct,
             rateBp: _edited.holidayPremiumWithinDailyThresholdRateBp,
             onChanged: (v) => setState(() => _edited = _edited.copyWith(
                 holidayPremiumWithinDailyThresholdRateBp: v)),
           ),
           _PercentField(
-            label: '휴일근로 8h 초과 가산율',
+            label: l.advancedHolidayOverPct,
             rateBp: _edited.holidayPremiumOverDailyThresholdRateBp,
             onChanged: (v) => setState(() => _edited = _edited.copyWith(
                 holidayPremiumOverDailyThresholdRateBp: v)),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader('기타'),
+          _SectionHeader(l.advancedSectionDeductions),
           _PercentField(
-            label: '사업소득 원천징수율',
+            label: l.advancedBusinessIncomePct,
             rateBp: _edited.businessIncomeWithholdingRateBp,
             onChanged: (v) => setState(() =>
                 _edited = _edited.copyWith(businessIncomeWithholdingRateBp: v)),
@@ -193,22 +196,14 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
                 setState(() => _edited = _edited.copyWith(weekStartsOn: v)),
           ),
           SwitchListTile(
-            title: const Text('일요일을 휴일로 처리'),
-            subtitle: const Text(
-              'OFF면 공휴일만 휴일. 일요일은 평일 취급',
-              style: TextStyle(fontSize: 12),
-            ),
+            title: Text(l.weekSun),
             value: _edited.sundayIsHoliday,
             onChanged: (v) =>
                 setState(() => _edited = _edited.copyWith(sundayIsHoliday: v)),
             contentPadding: EdgeInsets.zero,
           ),
           SwitchListTile(
-            title: const Text('시프트 시간 겹침 허용'),
-            subtitle: const Text(
-              'OFF면 같은 시간대에 시프트 입력 차단 (기본)',
-              style: TextStyle(fontSize: 12),
-            ),
+            title: Text(l.shiftSheetOverlapTitle),
             value: _edited.allowShiftOverlap,
             onChanged: (v) =>
                 setState(() => _edited = _edited.copyWith(allowShiftOverlap: v)),
@@ -229,7 +224,7 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('저장'),
+                  : Text(l.actionSave),
             ),
           ),
         ),
@@ -238,7 +233,6 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
   }
 }
 
-/// 초기 상수 (현재 저장된 값) — read만, 변경 안 됨.
 final _initialConstantsProvider = Provider<PayrollConstants>((ref) {
   final async = ref.watch(appSettingsProvider);
   return async.maybeWhen(
@@ -260,6 +254,7 @@ final _initialConstantsProvider = Provider<PayrollConstants>((ref) {
 class _Note extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
@@ -274,8 +269,7 @@ class _Note extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '한국 노동법(2025) 기본값에서 수정하지 않는 한 변경 불필요. '
-              '근무처별 가산 토글과는 별개로 적용되는 글로벌 상수입니다.',
+              l.advancedHelp,
               style: TextStyle(
                 color: scheme.onTertiaryContainer,
                 fontSize: 12,
@@ -294,6 +288,7 @@ class _ResetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: scheme.surfaceContainerHighest,
@@ -301,11 +296,7 @@ class _ResetTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         leading: const Icon(Icons.restart_alt),
-        title: const Text('기본값으로 초기화'),
-        subtitle: const Text(
-          '모든 항목을 한국 노동법 기본값으로 되돌리기',
-          style: TextStyle(fontSize: 12),
-        ),
+        title: Text(l.advancedReset),
         trailing: const Icon(Icons.chevron_right),
         onTap: onPressed,
       ),
@@ -345,10 +336,13 @@ class _TimeOfDayField extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final h = minuteOfDay ~/ 60;
     final m = minuteOfDay % 60;
+    final l = AppLocalizations.of(context);
     final use24 = ref.watch(use24HourFormatProvider);
     final timeStr = formatHM(
       DateTime(2026, 1, 1, h, m),
       use24Hour: use24,
+      am: l.amSuffix,
+      pm: l.pmSuffix,
     );
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -375,12 +369,10 @@ class _HoursField extends StatefulWidget {
     required this.label,
     required this.minutes,
     required this.onChanged,
-    this.hint,
   });
   final String label;
   final int minutes;
   final ValueChanged<int> onChanged;
-  final String? hint;
 
   @override
   State<_HoursField> createState() => _HoursFieldState();
@@ -424,8 +416,7 @@ class _HoursFieldState extends State<_HoursField> {
         controller: _ctrl,
         decoration: InputDecoration(
           labelText: widget.label,
-          helperText: widget.hint,
-          suffixText: '시간',
+          suffixText: 'h',
           border: const OutlineInputBorder(),
           isDense: true,
         ),
@@ -482,7 +473,7 @@ class _PercentFieldState extends State<_PercentField> {
   }
 
   static String _toText(int bp) {
-    final pct = bp / 100; // 5000bp = 50.00%
+    final pct = bp / 100;
     return pct.toStringAsFixed(bp % 100 == 0 ? 0 : 2);
   }
 
@@ -519,18 +510,18 @@ class _WeekStartField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: DropdownButtonFormField<int>(
         initialValue: value,
         decoration: const InputDecoration(
-          labelText: '주 시작 요일',
           border: OutlineInputBorder(),
           isDense: true,
         ),
-        items: const [
-          DropdownMenuItem(value: DateTime.monday, child: Text('월요일')),
-          DropdownMenuItem(value: DateTime.sunday, child: Text('일요일')),
+        items: [
+          DropdownMenuItem(value: DateTime.monday, child: Text(l.weekMon)),
+          DropdownMenuItem(value: DateTime.sunday, child: Text(l.weekSun)),
         ],
         onChanged: (v) {
           if (v != null) onChanged(v);

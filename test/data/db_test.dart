@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:salary_app/data/db/app_database.dart';
@@ -69,6 +70,7 @@ void main() {
         startAt: DateTime.utc(2026, 6, 1, 9),
         endAt: DateTime.utc(2026, 6, 1, 18),
         breakMinutes: 60,
+        planId: 0,
       );
       expect(shift.hourlyWageSnapshot, 12000);
     });
@@ -86,6 +88,7 @@ void main() {
         startAt: DateTime.utc(2026, 6, 1, 9),
         endAt: DateTime.utc(2026, 6, 1, 13),
         breakMinutes: 0,
+        planId: 0,
       );
 
       // 시급 인상
@@ -96,6 +99,7 @@ void main() {
         startAt: DateTime.utc(2026, 6, 2, 9),
         endAt: DateTime.utc(2026, 6, 2, 13),
         breakMinutes: 0,
+        planId: 0,
       );
 
       final oldReloaded = await shiftRepo.findById(oldShift.id);
@@ -118,6 +122,7 @@ void main() {
         startAt: DateTime(2026, 5, 31, 22),
         endAt: DateTime(2026, 6, 1, 2),
         breakMinutes: 0,
+        planId: 0,
       );
 
       // 순수 6월 시프트
@@ -126,10 +131,11 @@ void main() {
         startAt: DateTime(2026, 6, 1, 9),
         endAt: DateTime(2026, 6, 1, 18),
         breakMinutes: 60,
+        planId: 0,
       );
 
-      final mayShifts = await shiftRepo.watchShiftsInMonth(2026, 5).first;
-      final juneShifts = await shiftRepo.watchShiftsInMonth(2026, 6).first;
+      final mayShifts = await shiftRepo.watchShiftsInMonth(2026, 5, planId: 0).first;
+      final juneShifts = await shiftRepo.watchShiftsInMonth(2026, 6, planId: 0).first;
 
       expect(mayShifts.length, 1, reason: '자정 넘김 시프트는 startAt의 달(5월)에 속함');
       expect(juneShifts.length, 1);
@@ -148,6 +154,7 @@ void main() {
         startAt: DateTime.utc(2026, 6, 1, 9),
         endAt: DateTime.utc(2026, 6, 1, 18),
         breakMinutes: 0,
+        planId: 0,
       );
       await shiftRepo.delete(shift.id);
       expect(await shiftRepo.findById(shift.id), isNull);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// salary_app 백업 JSON 포맷.
 ///
 /// 포맷 버전 정책:
@@ -19,6 +20,7 @@ class BackupData {
     required this.jobPayrollOptions,
     required this.shifts,
     required this.appSettings,
+    this.plans = const [],
   });
 
   final int schemaVersion;
@@ -28,6 +30,7 @@ class BackupData {
   final List<JobPayrollOptionsJson> jobPayrollOptions;
   final List<ShiftJson> shifts;
   final AppSettingsJson appSettings;
+  final List<PlanJson> plans;
 
   Map<String, dynamic> toJson() => {
         'schemaVersion': schemaVersion,
@@ -38,6 +41,7 @@ class BackupData {
             jobPayrollOptions.map((o) => o.toJson()).toList(),
         'shifts': shifts.map((s) => s.toJson()).toList(),
         'appSettings': appSettings.toJson(),
+        'plans': plans.map((p) => p.toJson()).toList(),
       };
 
   factory BackupData.fromJson(Map<String, dynamic> json) {
@@ -57,8 +61,48 @@ class BackupData {
           .toList(),
       appSettings:
           AppSettingsJson.fromJson(json['appSettings'] as Map<String, dynamic>),
+      plans: (json['plans'] as List?)
+              ?.map((e) => PlanJson.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
+}
+
+class PlanJson {
+  const PlanJson({
+    required this.id,
+    required this.year,
+    required this.month,
+    required this.name,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final int id;
+  final int year;
+  final int month;
+  final String name;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'year': year,
+        'month': month,
+        'name': name,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        'updatedAt': updatedAt.toUtc().toIso8601String(),
+      };
+
+  factory PlanJson.fromJson(Map<String, dynamic> json) => PlanJson(
+        id: json['id'] as int,
+        year: json['year'] as int,
+        month: json['month'] as int,
+        name: json['name'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
 }
 
 class JobJson {
@@ -176,6 +220,7 @@ class ShiftJson {
     required this.memo,
     required this.createdAt,
     required this.updatedAt,
+    this.planId = 0,
   });
 
   final int id;
@@ -188,6 +233,7 @@ class ShiftJson {
   final String? memo;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int planId;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -201,6 +247,7 @@ class ShiftJson {
         if (memo != null) 'memo': memo,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
+        'planId': planId,
       };
 
   factory ShiftJson.fromJson(Map<String, dynamic> json) => ShiftJson(
@@ -216,6 +263,7 @@ class ShiftJson {
         memo: json['memo'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
+        planId: json['planId'] as int? ?? 0,
       );
 }
 
@@ -228,6 +276,8 @@ class AppSettingsJson {
     required this.payrollConstantsJson,
     required this.use24HourFormat,
     required this.updatedAt,
+    this.activePlanId = 0,
+    this.koreanLaborLawCompliance = true,
   });
 
   final int schemaVersion;
@@ -237,6 +287,8 @@ class AppSettingsJson {
   final String? payrollConstantsJson;
   final bool use24HourFormat;
   final DateTime updatedAt;
+  final int activePlanId;
+  final bool koreanLaborLawCompliance;
 
   Map<String, dynamic> toJson() => {
         'schemaVersion': schemaVersion,
@@ -248,6 +300,8 @@ class AppSettingsJson {
           'payrollConstantsJson': payrollConstantsJson,
         'use24HourFormat': use24HourFormat,
         'updatedAt': updatedAt.toUtc().toIso8601String(),
+        'activePlanId': activePlanId,
+        'koreanLaborLawCompliance': koreanLaborLawCompliance,
       };
 
   factory AppSettingsJson.fromJson(Map<String, dynamic> json) =>
@@ -262,5 +316,8 @@ class AppSettingsJson {
         payrollConstantsJson: json['payrollConstantsJson'] as String?,
         use24HourFormat: json['use24HourFormat'] as bool? ?? false,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
+        activePlanId: json['activePlanId'] as int? ?? 0,
+        koreanLaborLawCompliance:
+            json['koreanLaborLawCompliance'] as bool? ?? true,
       );
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../core/money/money.dart';
 
 /// 월별 급여 집계 결과. 항목별 분리 — UI에서 항목별 카드로 표시.

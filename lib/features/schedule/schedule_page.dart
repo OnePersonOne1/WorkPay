@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +10,14 @@ import '../../core/time/time_format.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../settings/settings_providers.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
 import 'monthly_report_detail_page.dart';
 import 'payroll_providers.dart';
+import 'plan_providers.dart';
+import 'plan_selector_bar.dart';
 import 'recurring_shift_sheet.dart';
 import 'schedule_providers.dart';
 import 'shift_edit_sheet.dart';
@@ -30,17 +34,24 @@ class SchedulePage extends ConsumerWidget {
       data: (jobs) => jobs.isNotEmpty,
       orElse: () => false,
     );
-    final selectedDate = ref.watch(selectedDateProvider);
 
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
           _performUndo(context, ref);
         },
+        const SingleActivator(LogicalKeyboardKey.keyY, control: true): () {
+          _performRedo(context, ref);
+        },
+        // Ctrl+Shift+Z도 redo로 (Mac/일부 사용자 관습).
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true):
+            () {
+          _performRedo(context, ref);
+        },
       },
       child: Focus(
         autofocus: true,
-        child: _scaffold(context, ref, hasJobs, selectedDate),
+        child: _scaffold(context, ref, hasJobs),
       ),
     );
   }
@@ -49,35 +60,49 @@ class SchedulePage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     bool hasJobs,
-    DateTime selectedDate,
   ) {
+    // FAB는 _ShiftList 휴지통을 가려서 제거. "시프트 추가"는 _SelectedDayPanel 헤더에 inline.
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('일정표'),
+        title: Text(l.scheduleTitle),
         actions: [
           if (hasJobs)
             TextButton.icon(
               icon: const Icon(Icons.event_repeat),
-              label: const Text('반복 추가'),
+              label: Text(l.scheduleAddRecurring),
               onPressed: () => showRecurringShiftSheet(context),
             ),
           TextButton.icon(
             icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('급여 명세'),
+            label: Text(l.scheduleViewPayroll),
             onPressed: () => pushMonthlyReportDetail(context),
           ),
-          // 되돌리기 — 스택 비었을 때 disabled
+          // 되돌리기 / 다시 실행 — 각 스택 비었을 때 disabled
           Consumer(builder: (ctx, r, _) {
-            final canUndo = r.watch(undoControllerProvider).isNotEmpty;
-            return TextButton.icon(
-              icon: const Icon(Icons.undo),
-              label: const Text('되돌리기'),
-              onPressed: canUndo ? () => _performUndo(context, r) : null,
+            final lc = AppLocalizations.of(ctx);
+            final undoState = r.watch(undoControllerProvider);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.undo),
+                  label: Text(lc.actionUndo),
+                  onPressed:
+                      undoState.canUndo ? () => _performUndo(context, r) : null,
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.redo),
+                  label: Text(lc.actionRedo),
+                  onPressed:
+                      undoState.canRedo ? () => _performRedo(context, r) : null,
+                ),
+              ],
             );
           }),
           TextButton.icon(
             icon: const Icon(Icons.delete_sweep_outlined),
-            label: const Text('이번 달 근무 초기화'),
+            label: Text(l.scheduleResetMonth),
             onPressed: () => _deleteMonthShifts(context, ref),
           ),
           const SizedBox(width: 4),
@@ -86,6 +111,7 @@ class SchedulePage extends ConsumerWidget {
       body: ListView(
         // 좁은 화면에서도 전체 콘텐츠를 스크롤로 볼 수 있게.
         children: const [
+          PlanSelectorBar(),
           _JobsBar(),
           _VisibilityToggles(),
           Divider(height: 1),
@@ -97,16 +123,6 @@ class SchedulePage extends ConsumerWidget {
           _SelectedDayPanel(),
         ],
       ),
-      floatingActionButton: hasJobs
-          ? FloatingActionButton.extended(
-              icon: const Icon(Icons.add),
-              label: const Text('시프트 추가'),
-              onPressed: () => showShiftEditSheet(
-                context,
-                defaultDate: selectedDate,
-              ),
-            )
-          : null,
     );
   }
 }
@@ -120,6 +136,7 @@ class _JobsBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final asyncJobs = ref.watch(activeJobsProvider);
     final selectedId = ref.watch(selectedJobProvider);
     final scheme = Theme.of(context).colorScheme;
@@ -137,12 +154,12 @@ class _JobsBar extends ConsumerWidget {
                     height: 32,
                     child: Center(child: LinearProgressIndicator()),
                   ),
-                  error: (e, _) => Text('근무처 로드 오류: $e'),
+                  error: (e, _) => Text(l.scheduleJobLoadError(e.toString())),
                   data: (jobs) {
                     if (jobs.isEmpty) {
-                      return const Text(
-                        '등록된 근무처가 없어요',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                      return Text(
+                        l.scheduleNoJobsRegistered,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       );
                     }
                     return SizedBox(
@@ -159,7 +176,7 @@ class _JobsBar extends ConsumerWidget {
               ),
               TextButton.icon(
                 icon: const Icon(Icons.tune, size: 18),
-                label: const Text('관리'),
+                label: Text(l.scheduleJobsManage),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(builder: (_) => const JobsPage()),
@@ -179,8 +196,8 @@ class _JobsBar extends ConsumerWidget {
                       orElse: () => jobs.first,
                     );
               final label = selected == null
-                  ? '기본 근무지 미선택 — 시프트 추가 시 첫째 근무처가 자동 선택돼요'
-                  : '기본 근무지: ${selected.name} (시프트 추가 시 자동 선택, 변경 가능)';
+                  ? l.scheduleDefaultJobNone
+                  : l.scheduleDefaultJobLabel(selected.name);
               return Padding(
                 padding: const EdgeInsets.fromLTRB(2, 4, 8, 0),
                 child: Text(
@@ -242,6 +259,7 @@ class _VisibilityToggles extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final vis = ref.watch(payrollVisibilityProvider);
     final notifier = ref.read(payrollVisibilityProvider.notifier);
     return Padding(
@@ -250,19 +268,19 @@ class _VisibilityToggles extends ConsumerWidget {
         spacing: 4,
         children: [
           FilterChip(
-            label: const Text('일급'),
+            label: Text(l.scheduleVisDaily),
             selected: vis.daily,
             onSelected: (_) => notifier.toggleDaily(),
             showCheckmark: true,
           ),
           FilterChip(
-            label: const Text('주급'),
+            label: Text(l.scheduleVisWeekly),
             selected: vis.weekly,
             onSelected: (_) => notifier.toggleWeekly(),
             showCheckmark: true,
           ),
           FilterChip(
-            label: const Text('월급'),
+            label: Text(l.scheduleVisMonthly),
             selected: vis.monthly,
             onSelected: (_) => notifier.toggleMonthly(),
             showCheckmark: true,
@@ -274,63 +292,84 @@ class _VisibilityToggles extends ConsumerWidget {
 }
 
 Future<void> _performUndo(BuildContext context, WidgetRef ref) async {
+  final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
   final entry = await ref.read(undoControllerProvider.notifier).undo();
   if (entry == null) {
     messenger.showSnackBar(
-      const SnackBar(content: Text('되돌릴 작업이 없어요')),
+      SnackBar(content: Text(l.scheduleNothingToUndo)),
     );
     return;
   }
   messenger.showSnackBar(
-    SnackBar(content: Text('되돌림: ${entry.description}')),
+    SnackBar(content: Text(l.scheduleUndoneLabel(entry.description))),
+  );
+}
+
+Future<void> _performRedo(BuildContext context, WidgetRef ref) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final entry = await ref.read(undoControllerProvider.notifier).redo();
+  if (entry == null) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l.scheduleNothingToRedo)),
+    );
+    return;
+  }
+  messenger.showSnackBar(
+    SnackBar(content: Text(l.scheduleRedoneLabel(entry.description))),
   );
 }
 
 Future<void> _deleteMonthShifts(BuildContext context, WidgetRef ref) async {
+  final l = AppLocalizations.of(context);
   final month = ref.read(selectedMonthProvider);
+  final planId = ref.read(activePlanIdProvider);
   final messenger = ScaffoldMessenger.of(context);
   final repo = ref.read(shiftRepositoryProvider);
-  final existing = await repo.watchShiftsInMonth(month.year, month.month).first;
+  final existing =
+      await repo.watchShiftsInMonth(month.year, month.month, planId: planId).first;
   if (existing.isEmpty) {
     messenger.showSnackBar(
-      SnackBar(content: Text('${month.year}년 ${month.month}월에 시프트가 없어요')),
+      SnackBar(content: Text(l.scheduleNoShiftsThisMonth(month.year, month.month))),
     );
     return;
   }
   if (!context.mounted) return;
   final confirm = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('${month.year}년 ${month.month}월 시프트 전체 삭제'),
-      content: Text(
-        '이 달의 시프트 ${existing.length}개를 모두 삭제할까요?\n\n'
-        '되돌리기로 복원할 수 있어요 (최근 5개 동작까지).',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('취소'),
-        ),
-        FilledButton.tonal(
-          style: FilledButton.styleFrom(
-            foregroundColor: Theme.of(ctx).colorScheme.error,
+    builder: (ctx) {
+      final lc = AppLocalizations.of(ctx);
+      return AlertDialog(
+        title: Text(lc.scheduleDeleteMonthTitle(month.year, month.month)),
+        content: Text(lc.scheduleDeleteMonthBody(existing.length)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(lc.actionCancel),
           ),
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('삭제'),
-        ),
-      ],
-    ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(lc.actionDelete),
+          ),
+        ],
+      );
+    },
   );
   if (confirm != true) return;
   await ref.read(undoControllerProvider.notifier).snapshotBefore(
         year: month.year,
         month: month.month,
-        description: '${month.year}년 ${month.month}월 시프트 ${existing.length}개 삭제',
+        planId: planId,
+        description:
+            l.scheduleDeleteMonthSnap(month.year, month.month, existing.length),
       );
-  final count = await repo.deleteShiftsInMonth(month.year, month.month);
+  final count = await repo.deleteShiftsInMonth(month.year, month.month, planId: planId);
   messenger.showSnackBar(
-    SnackBar(content: Text('$count개 시프트 삭제됨')),
+    SnackBar(content: Text(l.scheduleDeletedCount(count))),
   );
 }
 
@@ -343,6 +382,7 @@ class _CalendarHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final month = ref.watch(selectedMonthProvider);
     void shift(int delta) {
       final next = DateTime(month.year, month.month + delta);
@@ -355,7 +395,7 @@ class _CalendarHeader extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            tooltip: '이전 달',
+            tooltip: l.schedulePrevMonth,
             onPressed: () => shift(-1),
           ),
           Expanded(
@@ -373,7 +413,7 @@ class _CalendarHeader extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${month.year}년 ${month.month}월',
+                      _formatYearMonth(l.localeName, month),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -387,12 +427,12 @@ class _CalendarHeader extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            tooltip: '다음 달',
+            tooltip: l.scheduleNextMonth,
             onPressed: () => shift(1),
           ),
           TextButton.icon(
             icon: const Icon(Icons.today, size: 18),
-            label: const Text('오늘로 돌아가기'),
+            label: Text(l.scheduleBackToToday),
             onPressed: () {
               final now = DateTime.now();
               ref.read(selectedMonthProvider.notifier).set(now);
@@ -476,7 +516,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         ref.read(selectedMonthProvider.notifier).set(focusedDay);
       },
       calendarFormat: CalendarFormat.month,
-      availableCalendarFormats: const {CalendarFormat.month: '월'},
+      availableCalendarFormats: {CalendarFormat.month: AppLocalizations.of(context).monthLabel},
       startingDayOfWeek: StartingDayOfWeek.monday,
       // 기본 헤더는 숨기고 _CalendarHeader를 위에 별도 배치
       headerVisible: false,
@@ -507,8 +547,8 @@ class _MonthlyCalendar extends ConsumerWidget {
         selectedBuilder: (ctx, day, _) => makeCell(day, isSelected: true),
         // 요일 헤더 커스텀 — 일요일 빨강, 토요일 파랑
         dowBuilder: (ctx, day) {
-          const labels = ['월', '화', '수', '목', '금', '토', '일'];
-          final label = labels[day.weekday - 1];
+          final lc = AppLocalizations.of(ctx);
+          final label = _weekdayLabel(lc, day.weekday);
           final Color color;
           if (day.weekday == DateTime.sunday) {
             color = const Color(0xFFEF4444);
@@ -667,6 +707,7 @@ class _DayCell extends StatelessWidget {
   /// 시프트 시간 줄들. 1개면 시간만, 2개+면 "HH:MM~HH:MM Xh" 형식. 3개+는 "..." 생략.
   List<Widget> _buildShiftLines(Color fg) {
     final lines = <Widget>[];
+    // 셀 내부 표기는 context-free helper. AM/PM 기호는 기본(ko)로 두되 use24면 무관.
     String fmt(DateTime dt) => formatHMCompact(dt, use24Hour: use24Hour);
     if (shifts.length == 1) {
       final s = shifts[0];
@@ -782,22 +823,44 @@ class _SelectedDayPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final date = ref.watch(selectedDateProvider);
     final shifts = ref.watch(shiftsOnSelectedDateProvider);
     final asyncJobs = ref.watch(activeJobsProvider);
 
-    final dateLabel =
-        '${date.year}년 ${date.month}월 ${date.day}일 (${_weekdayKo(date.weekday)})';
+    final dateLabel = l.scheduleDateLabel(
+      date.year,
+      date.month,
+      date.day,
+      _weekdayLabel(l, date.weekday),
+    );
+    final hasJobs = asyncJobs.maybeWhen(
+      data: (jobs) => jobs.isNotEmpty,
+      orElse: () => false,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(
-            dateLabel,
-            style: Theme.of(context).textTheme.titleMedium,
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  dateLabel,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              if (hasJobs)
+                FilledButton.icon(
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(l.scheduleAddShift),
+                  onPressed: () =>
+                      showShiftEditSheet(context, defaultDate: date),
+                ),
+            ],
           ),
         ),
         asyncJobs.when(
@@ -807,7 +870,7 @@ class _SelectedDayPanel extends ConsumerWidget {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('근무처 로드 오류: $e'),
+            child: Text(l.scheduleJobLoadError(e.toString())),
           ),
           data: (jobs) {
             if (jobs.isEmpty) return const _NoJobsHint();
@@ -818,11 +881,24 @@ class _SelectedDayPanel extends ConsumerWidget {
       ],
     );
   }
+}
 
-  String _weekdayKo(int weekday) {
-    const labels = ['월', '화', '수', '목', '금', '토', '일'];
-    return labels[(weekday - 1) % 7];
-  }
+/// l10n weekday helper. weekday 1=월 ... 7=일.
+String _weekdayLabel(AppLocalizations l, int weekday) {
+  return switch (weekday) {
+    DateTime.monday => l.weekMon,
+    DateTime.tuesday => l.weekTue,
+    DateTime.wednesday => l.weekWed,
+    DateTime.thursday => l.weekThu,
+    DateTime.friday => l.weekFri,
+    DateTime.saturday => l.weekSat,
+    _ => l.weekSun,
+  };
+}
+
+/// "YYYY년 MM월" (ko) 또는 "Month YYYY" (en) 포맷.
+String _formatYearMonth(String localeName, DateTime month) {
+  return DateFormat.yMMMM(localeName).format(month);
 }
 
 /// 캘린더 아래에 주별 요약 리스트. vis.weekly가 ON일 때만 표시.
@@ -835,6 +911,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
     final vis = ref.watch(payrollVisibilityProvider);
     if (!vis.weekly) return const SizedBox.shrink();
 
+    final l = AppLocalizations.of(context);
     final asyncComp = ref.watch(monthlyComputationProvider);
     return asyncComp.maybeWhen(
       data: (c) {
@@ -845,7 +922,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
           ..sort((a, b) => a.key.compareTo(b.key));
         if (entries.isEmpty) return const SizedBox.shrink();
         final scheme = Theme.of(context).colorScheme;
-        final f = NumberFormat.decimalPattern('ko_KR');
+        final f = NumberFormat.decimalPattern(l.localeName);
         return Container(
           color: scheme.surfaceContainerLowest,
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
@@ -855,7 +932,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 4),
                 child: Text(
-                  '주별 요약',
+                  l.scheduleWeeklySummary,
                   style: TextStyle(
                     fontSize: 11,
                     color: scheme.onSurfaceVariant,
@@ -869,7 +946,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
                   child: Row(
                     children: [
                       Text(
-                        '${i + 1}주차',
+                        l.scheduleWeekNth(i + 1),
                         style: TextStyle(
                           color: scheme.onSurface,
                           fontSize: 13,
@@ -886,7 +963,9 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
                       ),
                       const Spacer(),
                       Text(
-                        '${f.format(c.weeklyPayWon[entries[i].key] ?? 0)}원',
+                        l.reportTotalAmount(
+                          f.format(c.weeklyPayWon[entries[i].key] ?? 0),
+                        ),
                         style: TextStyle(
                           color: scheme.onSurface,
                           fontSize: 13,
@@ -931,17 +1010,18 @@ class _MonthlySummary extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return asyncComp.when(
       loading: () => const LinearProgressIndicator(),
       error: (e, _) => Padding(
         padding: const EdgeInsets.all(8),
-        child: Text('월 합계 계산 오류: $e'),
+        child: Text(l.scheduleMonthCalcError(e.toString())),
       ),
       data: (c) {
         final minutes = c.report.totalWorkMinutes as int;
         final net = c.report.netPay;
         final gross = c.report.grossPay;
-        final f = NumberFormat.decimalPattern('ko_KR');
+        final f = NumberFormat.decimalPattern(l.localeName);
         return Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           child: InkWell(
@@ -955,7 +1035,7 @@ class _MonthlySummary extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '이 달 ${_h(minutes)}h · ${f.format(net.won)}원',
+                          l.scheduleMonthSummary(_h(minutes), f.format(net.won)),
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
@@ -963,7 +1043,7 @@ class _MonthlySummary extends ConsumerWidget {
                         ),
                         if (gross.won != net.won)
                           Text(
-                            '공제 전 ${f.format(gross.won)}원',
+                            l.scheduleGrossBefore(f.format(gross.won)),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme
@@ -999,6 +1079,7 @@ class _NoJobsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1007,19 +1088,19 @@ class _NoJobsHint extends StatelessWidget {
           children: [
             const Icon(Icons.work_outline, size: 40),
             const SizedBox(height: 8),
-            const Text(
-              '근무처가 없습니다',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              l.scheduleNoJobsTitle,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
-            const Text(
-              '시프트를 추가하려면 먼저 근무처를 등록하세요.',
+            Text(
+              l.scheduleNoJobsHint,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.add),
-              label: const Text('근무처 추가'),
+              label: Text(l.scheduleNoJobsButton),
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(builder: (_) => const JobsPage()),
@@ -1038,10 +1119,11 @@ class _NoShiftsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final l = AppLocalizations.of(context);
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text('이 날의 시프트가 없습니다.'),
+        padding: const EdgeInsets.all(24),
+        child: Text(l.scheduleNoShifts),
       ),
     );
   }
@@ -1067,9 +1149,12 @@ class _ShiftList extends ConsumerWidget {
         final job = jobsById[s.jobId];
         final start = s.startAt.toLocal();
         final end = s.endAt.toLocal();
+        final l = AppLocalizations.of(context);
+        final am = l.amSuffix;
+        final pm = l.pmSuffix;
         final timeText =
-            '${formatHM(start, use24Hour: use24)} ~ ${formatHM(end, use24Hour: use24)}'
-            '${s.breakMinutes > 0 ? ' (휴게 ${s.breakMinutes}분)' : ''}';
+            '${formatHM(start, use24Hour: use24, am: am, pm: pm)} ~ ${formatHM(end, use24Hour: use24, am: am, pm: pm)}'
+            '${s.breakMinutes > 0 ? ' ${l.scheduleBreakSuffix(s.breakMinutes)}' : ''}';
         return ListTile(
           leading: CircleAvatar(
             radius: 10,
@@ -1086,7 +1171,7 @@ class _ShiftList extends ConsumerWidget {
           ),
           trailing: IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: '시프트 삭제',
+            tooltip: l.scheduleShiftDeleteTooltip,
             onPressed: () => _deleteSingleShift(context, ref, s),
           ),
           onTap: () => showShiftEditSheet(context, shift: s),
@@ -1102,19 +1187,25 @@ Future<void> _deleteSingleShift(
   WidgetRef ref,
   Shift s,
 ) async {
+  final l = AppLocalizations.of(context);
   final startLocal = s.startAt.toLocal();
+  final planId = ref.read(activePlanIdProvider);
   await ref.read(undoControllerProvider.notifier).snapshotBefore(
         year: startLocal.year,
         month: startLocal.month,
-        description: '시프트 삭제',
+        planId: planId,
+        description: l.scheduleShiftDeleteSnapshotWithDate(
+          startLocal.month,
+          startLocal.day,
+        ),
       );
   await ref.read(shiftRepositoryProvider).delete(s.id);
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('삭제 완료. 되돌리기로 되돌릴 수 있어요.'),
+        content: Text(l.scheduleSingleShiftDeleted),
         action: SnackBarAction(
-          label: '되돌리기',
+          label: l.actionUndo,
           onPressed: () => _performUndo(context, ref),
         ),
       ),

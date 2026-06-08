@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../domain/entity/job.dart';
 import '../../domain/payroll/monthly_computation.dart';
 

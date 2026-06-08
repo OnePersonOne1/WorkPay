@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter_test/flutter_test.dart';
 import 'package:salary_app/core/time/work_segment.dart';
 import 'package:salary_app/domain/payroll/break_distribution.dart';

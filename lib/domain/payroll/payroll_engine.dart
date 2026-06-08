@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../core/time/time_segmenter.dart';
 import '../../core/time/week_resolver.dart';
 import '../../core/time/work_segment.dart';

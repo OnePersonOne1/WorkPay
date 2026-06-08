@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 
 /// 근무처 색상 고정 팔레트. 캘린더 dot, 카드 강조에 사용.

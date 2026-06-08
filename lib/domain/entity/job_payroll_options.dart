@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'deduction_mode.dart';
 
 /// 근무처별 급여 계산 옵션. 모든 토글은 기본 false (단순 시급×시간만 계산).

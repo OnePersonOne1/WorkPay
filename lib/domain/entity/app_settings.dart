@@ -1,12 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// 앱 전역 설정 (single-row 테이블, id 항상 1).
-enum ThemeModeSetting {
-  system('시스템'),
-  light('라이트'),
-  dark('다크');
-
-  const ThemeModeSetting(this.label);
-  final String label;
-}
+/// label 텍스트는 UI에서 AppLocalizations로 조회. enum 자체엔 표시 문자열 없음.
+enum ThemeModeSetting { system, light, dark }
 
 class AppSettings {
   const AppSettings({
@@ -17,6 +12,8 @@ class AppSettings {
     required this.payrollConstantsJson,
     required this.use24HourFormat,
     required this.undoStackJson,
+    required this.activePlanId,
+    required this.koreanLaborLawCompliance,
     required this.updatedAt,
   });
 
@@ -35,6 +32,13 @@ class AppSettings {
   /// Undo 스택 직렬화. NULL이면 빈 스택. 앱 종료 후에도 유지.
   final String? undoStackJson;
 
+  /// 현재 활성 plan id. 0=메인, >0=모의안.
+  final int activePlanId;
+
+  /// 한국 노동법 준수 모드. ON이면 야간/연장/주휴/공제 등 고급 옵션 노출 + 계산 적용.
+  /// OFF면 단순 시급×시간만, 고급 옵션 UI 숨김.
+  final bool koreanLaborLawCompliance;
+
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -48,6 +52,8 @@ class AppSettings {
     bool? use24HourFormat,
     String? undoStackJson,
     bool clearUndoStackJson = false,
+    int? activePlanId,
+    bool? koreanLaborLawCompliance,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -62,6 +68,9 @@ class AppSettings {
       undoStackJson: clearUndoStackJson
           ? null
           : (undoStackJson ?? this.undoStackJson),
+      activePlanId: activePlanId ?? this.activePlanId,
+      koreanLaborLawCompliance:
+          koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -76,6 +85,8 @@ class AppSettings {
       other.payrollConstantsJson == payrollConstantsJson &&
       other.use24HourFormat == use24HourFormat &&
       other.undoStackJson == undoStackJson &&
+      other.activePlanId == activePlanId &&
+      other.koreanLaborLawCompliance == koreanLaborLawCompliance &&
       other.updatedAt == updatedAt;
 
   @override
@@ -87,6 +98,8 @@ class AppSettings {
         payrollConstantsJson,
         use24HourFormat,
         undoStackJson,
+        activePlanId,
+        koreanLaborLawCompliance,
         updatedAt,
       ]);
 }

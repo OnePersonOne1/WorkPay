@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,19 +9,13 @@ import '../../domain/entity/business_size.dart';
 import '../../domain/entity/deduction_mode.dart';
 import '../../domain/entity/income_type.dart';
 import '../../domain/entity/job.dart';
+import '../../l10n/enum_labels.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../settings/settings_providers.dart';
 
-/// 근무처 분류 프리셋. 클릭 시 수동 옵션들에 일괄 적용된다.
-/// DB에 영구 저장되지 않으며, 시트 세션 동안의 UI 선택 상태일 뿐이다.
-enum JobPreset {
-  workStudy('근로장학'),
-  under5('5인 미만'),
-  fiveOrMore('5인 이상');
+/// 근무처 분류 프리셋. UI 임시 상태.
+enum JobPreset { workStudy, under5, fiveOrMore }
 
-  const JobPreset(this.label);
-  final String label;
-}
-
-/// 프리셋이 적용하는 값 묶음.
 class _PresetValues {
   const _PresetValues({
     required this.incomeType,
@@ -75,19 +70,19 @@ class _PresetValues {
     deductionMode: DeductionMode.fourInsurance,
   );
 
-  static _PresetValues of(JobPreset preset) {
-    switch (preset) {
-      case JobPreset.workStudy:
-        return workStudy;
-      case JobPreset.under5:
-        return under5;
-      case JobPreset.fiveOrMore:
-        return fiveOrMore;
-    }
-  }
+  static _PresetValues of(JobPreset preset) => switch (preset) {
+        JobPreset.workStudy => workStudy,
+        JobPreset.under5 => under5,
+        JobPreset.fiveOrMore => fiveOrMore,
+      };
 }
 
-/// Job 생성/편집용 modal bottom sheet.
+String _presetLabel(JobPreset p, AppLocalizations l) => switch (p) {
+      JobPreset.workStudy => l.incomeWorkStudy,
+      JobPreset.under5 => l.businessUnder5,
+      JobPreset.fiveOrMore => l.businessFiveOrMore,
+    };
+
 Future<bool?> showJobEditSheet(BuildContext context, {Job? job}) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -113,13 +108,9 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _wageCtrl;
 
-  // 기본 필드
   late int _colorArgb;
-
-  // 프리셋 UI 상태 (영구 저장 X)
   JobPreset? _selectedPreset;
 
-  // 고급 옵션 (실제 저장값)
   bool _loadingOptions = false;
   bool _weeklyHolidayAllowance = false;
   bool _nightPremium = false;
@@ -151,10 +142,8 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   }
 
   Future<void> _loadOptions(int jobId) async {
-    final opts = await ref
-        .read(jobRepositoryProvider)
-        .watchOptions(jobId)
-        .first;
+    final opts =
+        await ref.read(jobRepositoryProvider).watchOptions(jobId).first;
     if (!mounted) return;
     setState(() {
       _weeklyHolidayAllowance = opts.weeklyHolidayAllowance;
@@ -175,11 +164,9 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
     super.dispose();
   }
 
-  /// 프리셋 토글. on=true면 선택+적용, on=false면 해제(값 유지).
   void _togglePreset(JobPreset preset, bool on) {
     setState(() {
       if (!on) {
-        // 같은 프리셋 재클릭 → 해제만 (값은 그대로)
         if (_selectedPreset == preset) _selectedPreset = null;
         return;
       }
@@ -199,6 +186,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
+    final l = AppLocalizations.of(context);
     final repo = ref.read(jobRepositoryProvider);
     final name = _nameCtrl.text.trim();
     final wage = int.parse(_wageCtrl.text.trim());
@@ -241,12 +229,17 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
           updatedAt: now,
         ),
       );
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.jobSheetSaved(name))),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
@@ -254,6 +247,8 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final laborLawOn = ref.watch(koreanLaborLawComplianceProvider);
     final isEdit = widget.initial != null;
     if (_loadingOptions) {
       return const SizedBox(
@@ -272,72 +267,73 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                isEdit ? '근무처 편집' : '근무처 추가',
+                isEdit ? l.jobSheetTitleEdit : l.jobSheetTitleNew,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
             ),
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: '이름',
-                hintText: '예: 스타벅스 OO점',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.jobSheetName,
+                hintText: l.jobSheetNameHint,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.next,
               autofocus: !isEdit,
               maxLength: 60,
               validator: (v) {
                 final t = v?.trim() ?? '';
-                if (t.isEmpty) return '이름을 입력하세요';
+                if (t.isEmpty) return l.jobSheetNameRequired;
                 return null;
               },
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _wageCtrl,
-              decoration: const InputDecoration(
-                labelText: '시급',
-                hintText: '예: 11000',
-                border: OutlineInputBorder(),
-                suffixText: '원',
+              decoration: InputDecoration(
+                labelText: l.jobSheetWage,
+                border: const OutlineInputBorder(),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: false),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: false),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (v) {
                 final t = v?.trim() ?? '';
-                if (t.isEmpty) return '시급을 입력하세요';
+                if (t.isEmpty) return l.jobSheetWageRequired;
                 final n = int.tryParse(t);
-                if (n == null) return '숫자만 입력';
-                if (n <= 0) return '0보다 커야 합니다';
+                if (n == null) return l.jobSheetWageInvalid;
+                if (n <= 0) return l.jobSheetWageInvalid;
                 return null;
               },
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('색상'),
+            _SectionLabel(l.jobSheetColor),
             _ColorPalette(
               selectedArgb: _colorArgb,
               onSelected: (argb) => setState(() => _colorArgb = argb),
             ),
             const SizedBox(height: 16),
-            _AdvancedSection(
-              selectedPreset: _selectedPreset,
-              onPresetToggled: _togglePreset,
-              weeklyHolidayAllowance: _weeklyHolidayAllowance,
-              nightPremium: _nightPremium,
-              dailyOvertime: _dailyOvertime,
-              weeklyOvertime: _weeklyOvertime,
-              holidayPremium: _holidayPremium,
-              preciseBreakInput: _preciseBreakInput,
-              deductionMode: _deductionMode,
-              onWeekly: (v) => setState(() => _weeklyHolidayAllowance = v),
-              onNight: (v) => setState(() => _nightPremium = v),
-              onDailyOT: (v) => setState(() => _dailyOvertime = v),
-              onWeeklyOT: (v) => setState(() => _weeklyOvertime = v),
-              onHoliday: (v) => setState(() => _holidayPremium = v),
-              onPreciseBreak: (v) => setState(() => _preciseBreakInput = v),
-              onDeduction: (v) => setState(() => _deductionMode = v),
-            ),
+            // 노동법 OFF면 고급 옵션 섹션 자체를 숨김.
+            if (laborLawOn)
+              _AdvancedSection(
+                selectedPreset: _selectedPreset,
+                onPresetToggled: _togglePreset,
+                weeklyHolidayAllowance: _weeklyHolidayAllowance,
+                nightPremium: _nightPremium,
+                dailyOvertime: _dailyOvertime,
+                weeklyOvertime: _weeklyOvertime,
+                holidayPremium: _holidayPremium,
+                preciseBreakInput: _preciseBreakInput,
+                deductionMode: _deductionMode,
+                onWeekly: (v) => setState(() => _weeklyHolidayAllowance = v),
+                onNight: (v) => setState(() => _nightPremium = v),
+                onDailyOT: (v) => setState(() => _dailyOvertime = v),
+                onWeeklyOT: (v) => setState(() => _weeklyOvertime = v),
+                onHoliday: (v) => setState(() => _holidayPremium = v),
+                onPreciseBreak: (v) => setState(() => _preciseBreakInput = v),
+                onDeduction: (v) => setState(() => _deductionMode = v),
+              ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,
@@ -349,7 +345,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(isEdit ? '저장' : '추가'),
+                    : Text(isEdit ? l.actionSave : l.actionAdd),
               ),
             ),
           ],
@@ -476,6 +472,7 @@ class _AdvancedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: EdgeInsets.zero,
@@ -485,79 +482,59 @@ class _AdvancedSection extends StatelessWidget {
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-          title: const Text('고급 옵션'),
-          subtitle: Text(
-            '근무처 분류로 자동 적용하거나, 항목별로 직접 조정하세요',
-            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
-          ),
+          title: Text(l.jobsAdvancedOptions),
           children: [
-            // ─────────────────────────────────
-            //  근무처 분류 (프리셋)
-            // ─────────────────────────────────
-            _BigSectionLabel('근무처 분류 (프리셋)'),
             for (final preset in JobPreset.values)
-              _PresetTile(
-                preset: preset,
-                selected: selectedPreset == preset,
+              SwitchListTile(
+                value: selectedPreset == preset,
                 onChanged: (v) => onPresetToggled(preset, v),
+                title: Text(_presetLabel(preset, l)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                dense: true,
               ),
             const Divider(height: 28),
-            // ─────────────────────────────────
-            //  수동 옵션 변경
-            // ─────────────────────────────────
-            _BigSectionLabel('수동 옵션 변경'),
-            _SubSectionLabel('수당 가산'),
             _ToggleTile(
-              title: '주휴수당',
-              hint: '주 15시간 이상 근무 시 1일분(통상시급 × 주근로/5, 최대 8h) 추가 지급',
+              title: l.jobAdvWeeklyHoliday,
               value: weeklyHolidayAllowance,
               onChanged: onWeekly,
             ),
             _ToggleTile(
-              title: '야간 가산수당',
-              hint: '22:00 ~ 06:00 근무 시간에 +50% 가산',
+              title: l.jobAdvNightPremium,
               value: nightPremium,
               onChanged: onNight,
             ),
             _ToggleTile(
-              title: '일 연장 가산수당',
-              hint: '하루 8시간 초과 근무분에 +50% 가산',
+              title: l.jobAdvDailyOvertime,
               value: dailyOvertime,
               onChanged: onDailyOT,
             ),
             _ToggleTile(
-              title: '주 연장 가산수당',
-              hint: '주 40시간 초과 근무분에 +50% 가산 (일 연장과 중복 안 됨)',
+              title: l.jobAdvWeeklyOvertime,
               value: weeklyOvertime,
               onChanged: onWeeklyOT,
             ),
             _ToggleTile(
-              title: '휴일근로 가산수당',
-              hint: '휴일 근무에 +50%, 그 중 8시간 초과분은 +100%',
+              title: l.jobAdvHolidayPremium,
               value: holidayPremium,
               onChanged: onHoliday,
             ),
             const Divider(height: 24),
-            _SubSectionLabel('입력 옵션'),
             _ToggleTile(
-              title: '정밀 휴게 입력',
-              hint: '시프트 입력 시 휴게 분뿐 아니라 휴게 시작 시각도 함께 입력해요',
+              title: l.jobAdvPreciseBreak,
               value: preciseBreakInput,
               onChanged: onPreciseBreak,
             ),
             const Divider(height: 24),
-            _SubSectionLabel('세금·공제'),
             Padding(
-              padding: const EdgeInsets.only(left: 8, right: 8, top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                '월급에서 떼는 금액. 보통 학교 근로장학은 비과세, 알바 일부는 3.3%, 정규 사업장은 4대보험.',
-                style: TextStyle(
-                  color: scheme.onSurfaceVariant,
-                  fontSize: 12,
-                ),
+                l.jobAdvDeductionMode,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
-            const SizedBox(height: 4),
             RadioGroup<DeductionMode>(
               groupValue: deductionMode,
               onChanged: (v) {
@@ -568,16 +545,10 @@ class _AdvancedSection extends StatelessWidget {
                   for (final m in DeductionMode.values)
                     RadioListTile<DeductionMode>(
                       value: m,
-                      title: Text(m.label),
-                      subtitle: Text(
-                        _deductionHint(m),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
+                      title: Text(deductionModeLabel(m, l)),
                       dense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 8),
                     ),
                 ],
               ),
@@ -587,95 +558,15 @@ class _AdvancedSection extends StatelessWidget {
       ),
     );
   }
-
-  String _deductionHint(DeductionMode m) {
-    switch (m) {
-      case DeductionMode.none:
-        return '공제 없음';
-      case DeductionMode.businessIncome3_3:
-        return '월급에서 3.3% 자동 차감 (소득세 3% + 지방소득세 0.3%)';
-      case DeductionMode.fourInsurance:
-        return '월급에서 약 9.4% 자동 차감 (국민연금·건강·고용 합산)';
-    }
-  }
-}
-
-class _BigSectionLabel extends StatelessWidget {
-  const _BigSectionLabel(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
-  }
-}
-
-class _SubSectionLabel extends StatelessWidget {
-  const _SubSectionLabel(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
-
-class _PresetTile extends StatelessWidget {
-  const _PresetTile({
-    required this.preset,
-    required this.selected,
-    required this.onChanged,
-  });
-  final JobPreset preset;
-  final bool selected;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile(
-      value: selected,
-      onChanged: onChanged,
-      title: Text(preset.label),
-      subtitle: Text(
-        'On하면 프리셋이 자동 적용돼요',
-        style: TextStyle(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      dense: true,
-    );
-  }
 }
 
 class _ToggleTile extends StatelessWidget {
   const _ToggleTile({
     required this.title,
-    required this.hint,
     required this.value,
     required this.onChanged,
   });
   final String title;
-  final String hint;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -685,13 +576,6 @@ class _ToggleTile extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       title: Text(title),
-      subtitle: Text(
-        hint,
-        style: TextStyle(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       dense: true,
     );

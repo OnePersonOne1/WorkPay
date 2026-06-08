@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'business_size.dart';
 import 'income_type.dart';
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../domain/entity/app_settings.dart' as ent;
 import '../../domain/repository/app_settings_repository.dart';
 import '../dao/app_settings_dao.dart';

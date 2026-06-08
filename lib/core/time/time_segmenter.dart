@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../domain/payroll/holiday_calendar.dart';
 import '../../domain/payroll/payroll_constants.dart';
 import 'work_segment.dart';

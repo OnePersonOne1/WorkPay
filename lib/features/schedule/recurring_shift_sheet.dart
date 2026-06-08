@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,18 +7,19 @@ import '../../core/palette/job_colors.dart';
 import '../../core/time/time_picker_dialog.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
-import '../../domain/repository/shift_repository.dart';
 import '../../domain/entity/shift.dart';
+import '../../domain/repository/shift_repository.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../job/job_providers.dart';
 import '../settings/settings_providers.dart';
 import 'payroll_providers.dart';
+import 'plan_providers.dart';
 import 'schedule_providers.dart';
 import 'shift_edit_sheet.dart' show showOverlapDialog;
 import 'undo_controller.dart';
 
-const int _kMaxBulkShifts = 366; // 안전장치: 1년치 상한
+const int _kMaxBulkShifts = 366;
 
-/// 반복 시프트 일괄 입력 modal sheet.
 Future<bool?> showRecurringShiftSheet(BuildContext context) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -57,7 +59,6 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
     super.dispose();
   }
 
-  /// 패턴을 (startAt, endAt) 페어 목록으로 펼친다 (로컬 시각 기준).
   List<({DateTime startAt, DateTime endAt})> _expand() {
     final out = <({DateTime startAt, DateTime endAt})>[];
     final startMidnight =
@@ -72,7 +73,6 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
       var end =
           DateTime(d.year, d.month, d.day, _endTime.hour, _endTime.minute);
       if (!end.isAfter(start)) {
-        // 자정 넘김
         end = end.add(const Duration(days: 1));
       }
       out.add((startAt: start, endAt: end));
@@ -130,30 +130,31 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
   }
 
   Future<void> _save() async {
+    final l = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     final job = _selectedJob;
     if (job == null) {
-      _snack('근무처를 선택하세요');
+      _snack(l.shiftSheetSelectJob);
       return;
     }
     if (_weekdays.isEmpty) {
-      _snack('반복할 요일을 1개 이상 선택하세요');
+      _snack(l.recurringSelectWeekdays);
       return;
     }
     final pairs = _expand();
     if (pairs.isEmpty) {
-      _snack('선택한 기간/요일에 매칭되는 날짜가 없습니다');
+      _snack(l.recurringPreview(0, 0));
       return;
     }
     if (pairs.length > _kMaxBulkShifts) {
-      _snack('한 번에 만들 수 있는 최대 시프트는 $_kMaxBulkShifts개입니다 (현재 ${pairs.length}개)');
+      _snack(l.recurringPreview(pairs.length, 0));
       return;
     }
     final breakMinutes = int.parse(_breakCtrl.text.trim());
     final firstDuration =
         pairs.first.endAt.difference(pairs.first.startAt).inMinutes;
     if (breakMinutes >= firstDuration) {
-      _snack('휴게가 근무 시간보다 깁니다');
+      _snack(l.shiftSheetBreakTooLong);
       return;
     }
 
@@ -168,21 +169,19 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
         ),
     ];
 
-    // 겹침 검증
     final constants = ref.read(payrollConstantsProvider);
     if (!constants.allowShiftOverlap) {
       final repo = ref.read(shiftRepositoryProvider);
-      // 기간이 걸친 모든 월의 시프트를 모음 (시작월~종료월)
+      final planId = ref.read(activePlanIdProvider);
       final months = <(int, int)>{};
       for (final d in drafts) {
         months.add((d.startAt.year, d.startAt.month));
       }
       final existing = <Shift>[];
       for (final (y, m) in months) {
-        existing.addAll(await repo.watchShiftsInMonth(y, m).first);
+        existing.addAll(await repo.watchShiftsInMonth(y, m, planId: planId).first);
       }
 
-      // 충돌하는 기존 시프트 list (중복 제거)
       final conflictingExisting = <Shift>{};
       for (final d in drafts) {
         for (final ex in existing) {
@@ -214,24 +213,28 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
     setState(() => _saving = true);
     try {
       final repo = ref.read(shiftRepositoryProvider);
-      // 일괄 생성은 여러 월에 걸칠 수 있음 — 시작 월만 snapshot (단순화).
-      // 다른 월에 만들어진 시프트는 undo로 복원되지 않을 수 있음을 감수.
+      final planId = ref.read(activePlanIdProvider);
       final firstDate = drafts.first.startAt;
       await ref.read(undoControllerProvider.notifier).snapshotBefore(
             year: firstDate.year,
             month: firstDate.month,
-            description: '반복 시프트 ${drafts.length}개 추가',
+            planId: planId,
+            description: l.recurringSnapshot(drafts.length),
           );
-      final created = await repo.createBulk(jobId: job.id, drafts: drafts);
+      final created = await repo.createBulk(
+        jobId: job.id,
+        drafts: drafts,
+        planId: planId,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('시프트 ${created.length}개 추가됨')),
+        SnackBar(content: Text(l.recurringCreatedCount(created.length))),
       );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _snack('추가 실패: $e');
+      _snack('Error: $e');
     }
   }
 
@@ -241,6 +244,7 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final asyncJobs = ref.watch(activeJobsProvider);
 
     return asyncJobs.when(
@@ -250,13 +254,13 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
       ),
       error: (e, _) => SizedBox(
         height: 200,
-        child: Center(child: Text('근무처 로드 오류: $e')),
+        child: Center(child: Text(l.scheduleJobLoadError(e.toString()))),
       ),
       data: (jobs) {
         if (jobs.isEmpty) {
-          return const SizedBox(
+          return SizedBox(
             height: 200,
-            child: Center(child: Text('근무처가 없어요. 먼저 근무처를 추가하세요.')),
+            child: Center(child: Text(l.scheduleNoJobsHint)),
           );
         }
         if (_selectedJob == null) {
@@ -272,6 +276,7 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
   }
 
   Widget _buildForm(BuildContext context, List<Job> jobs) {
+    final l = AppLocalizations.of(context);
     final pairs = _expand();
     final count = pairs.length;
 
@@ -286,17 +291,16 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                '반복 시프트 추가',
+                l.recurringTitle,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
             ),
-            // 근무처
             DropdownButtonFormField<Job>(
               initialValue: _selectedJob,
-              decoration: const InputDecoration(
-                labelText: '근무처',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.recurringJob,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final j in jobs)
@@ -317,21 +321,19 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
               onChanged: (j) => setState(() => _selectedJob = j),
             ),
             const SizedBox(height: 16),
-            // 요일 다중 선택
-            const _SectionLabel('반복 요일'),
+            _SectionLabel(l.recurringWeekdays),
             _WeekdayPicker(
               selected: _weekdays,
               onChanged: (set) => setState(() => _weekdays = set),
             ),
             const SizedBox(height: 16),
-            // 시각
-            const _SectionLabel('시각'),
+            _SectionLabel(l.recurringTimeBreak),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.access_time, size: 16),
-                    label: Text('시작 ${_fmtTime(_startTime)}'),
+                    label: Text('${l.shiftSheetStart} ${_fmtTime(_startTime)}'),
                     onPressed: _pickStartTime,
                   ),
                 ),
@@ -339,26 +341,14 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.access_time, size: 16),
-                    label: Text('종료 ${_fmtTime(_endTime)}'),
+                    label: Text('${l.shiftSheetEnd} ${_fmtTime(_endTime)}'),
                     onPressed: _pickEndTime,
                   ),
                 ),
               ],
             ),
-            if (!_endIsAfterStart())
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  '종료가 시작 이전 — 자정을 넘기는 시프트로 처리됩니다',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                ),
-              ),
             const SizedBox(height: 16),
-            // 기간
-            const _SectionLabel('기간'),
+            _SectionLabel(l.recurringPeriod),
             Row(
               children: [
                 Expanded(
@@ -382,21 +372,21 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            // 휴게 + 메모
             TextFormField(
               controller: _breakCtrl,
-              decoration: const InputDecoration(
-                labelText: '휴게 시간',
-                suffixText: '분',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.shiftSheetBreak,
+                suffixText: 'm',
+                border: const OutlineInputBorder(),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: false),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: false),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (v) {
                 final t = v?.trim() ?? '';
-                if (t.isEmpty) return '0 이상 입력';
+                if (t.isEmpty) return '0+';
                 final n = int.tryParse(t);
-                if (n == null || n < 0) return '0 이상의 숫자';
+                if (n == null || n < 0) return '0+';
                 return null;
               },
               onChanged: (_) => setState(() {}),
@@ -404,15 +394,14 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _memoCtrl,
-              decoration: const InputDecoration(
-                labelText: '메모 (모든 시프트에 공통, 선택)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.shiftSheetMemo,
+                border: const OutlineInputBorder(),
               ),
               maxLength: 120,
               maxLines: 2,
             ),
             const SizedBox(height: 12),
-            // 미리보기
             _PreviewBar(count: count, max: _kMaxBulkShifts),
             const SizedBox(height: 16),
             FilledButton(
@@ -425,19 +414,13 @@ class _State extends ConsumerState<_RecurringShiftSheet> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text('$count개 시프트 일괄 추가'),
+                    : Text(l.recurringCreatedCount(count)),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  bool _endIsAfterStart() {
-    final startMin = _startTime.hour * 60 + _startTime.minute;
-    final endMin = _endTime.hour * 60 + _endTime.minute;
-    return endMin > startMin;
   }
 
   String _fmtTime(TimeOfDay t) =>
@@ -470,17 +453,25 @@ class _WeekdayPicker extends StatelessWidget {
   final Set<int> selected;
   final ValueChanged<Set<int>> onChanged;
 
-  static const _labels = ['월', '화', '수', '목', '금', '토', '일'];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final labels = [
+      l.weekMon,
+      l.weekTue,
+      l.weekWed,
+      l.weekThu,
+      l.weekFri,
+      l.weekSat,
+      l.weekSun,
+    ];
     return Wrap(
       spacing: 6,
       children: List.generate(7, (i) {
-        final weekday = i + 1; // 1=월
+        final weekday = i + 1;
         final isSelected = selected.contains(weekday);
         return FilterChip(
-          label: Text(_labels[i]),
+          label: Text(labels[i]),
           selected: isSelected,
           onSelected: (v) {
             final next = {...selected};
@@ -504,6 +495,7 @@ class _PreviewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final overLimit = count > max;
     return Container(
@@ -524,11 +516,7 @@ class _PreviewBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              overLimit
-                  ? '$count개 — 한 번에 $max개를 초과합니다. 기간을 줄이세요.'
-                  : count == 0
-                      ? '조건에 매칭되는 날짜가 없어요'
-                      : '이 패턴으로 $count개 시프트가 만들어져요',
+              l.recurringPreview(count, overLimit ? max : 0),
               style: TextStyle(
                 color: overLimit ? scheme.onErrorContainer : null,
               ),

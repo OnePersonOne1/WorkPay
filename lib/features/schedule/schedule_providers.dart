@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../../domain/entity/shift.dart';
 import '../job/job_providers.dart';
+import 'plan_providers.dart';
 
 /// 캘린더에 표시 중인 월(첫째 날, 자정 로컬). 기본값: 오늘이 속한 월.
 class SelectedMonthNotifier extends Notifier<DateTime> {
@@ -54,11 +56,12 @@ class SelectedJobNotifier extends Notifier<int?> {
 final selectedJobProvider =
     NotifierProvider<SelectedJobNotifier, int?>(SelectedJobNotifier.new);
 
-/// 선택된 월에 속하는 시프트 스트림.
+/// 선택된 월의 시프트 stream (활성 plan에서).
 final shiftsInSelectedMonthProvider = StreamProvider<List<Shift>>((ref) {
   final month = ref.watch(selectedMonthProvider);
+  final planId = ref.watch(activePlanIdProvider);
   final repo = ref.watch(shiftRepositoryProvider);
-  return repo.watchShiftsInMonth(month.year, month.month);
+  return repo.watchShiftsInMonth(month.year, month.month, planId: planId);
 });
 
 /// 선택된 월의 각 날짜의 시프트 리스트 (시작 시각 순 정렬, 각각 별도 표시).

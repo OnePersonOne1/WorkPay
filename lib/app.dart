@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/schedule/schedule_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/settings/settings_providers.dart';
+import 'l10n/generated/app_localizations.dart';
 
 class SalaryApp extends ConsumerWidget {
   const SalaryApp({super.key});
@@ -12,8 +14,9 @@ class SalaryApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
     return MaterialApp(
-      title: '월급이',
+      onGenerateTitle: (ctx) => AppLocalizations.of(ctx).appTitle,
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: ThemeData(
@@ -27,14 +30,10 @@ class SalaryApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      // Material 위젯(DatePicker, TimePicker 등)에 한국어 적용:
-      // 오전/오후, 요일, 년/월/일 자동 번역.
-      locale: const Locale('ko'),
-      supportedLocales: const [
-        Locale('ko'),
-        Locale('en'),
-      ],
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -61,6 +60,7 @@ class _RootShellState extends ConsumerState<_RootShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: IndexedStack(
         index: _index,
@@ -71,16 +71,16 @@ class _RootShellState extends ConsumerState<_RootShell> {
         onDestinationSelected: (i) => setState(() => _index = i),
         // Material 3 기본(80) → 64로 컴팩트
         height: 64,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: '일정표',
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: l.navSchedule,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: '설정',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l.navSettings,
           ),
         ],
       ),

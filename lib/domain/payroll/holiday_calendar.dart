@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /// 휴일 판정 인터페이스. 향후 한국 공휴일 패키지로 교체 가능.
 ///
 /// '휴일'은 법정공휴일 + (옵션) 일요일을 포함한다. 일요일 처리는 [PayrollConstants]의

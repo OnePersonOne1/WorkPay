@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import 'package:drift/drift.dart';
 
 class Jobs extends Table {
@@ -43,6 +44,18 @@ class Shifts extends Table {
   DateTimeColumn get breakStartAt => dateTime().nullable()();
   IntColumn get hourlyWageSnapshot => integer()();
   TextColumn get memo => text().nullable()();
+  /// 시프트가 속한 plan. 0 = 메인(영구), >0 = 모의안(plans.id 참조).
+  IntColumn get planId => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
+/// 모의안. 메인(planId=0)은 이 테이블에 row 없음 — sentinel로 처리.
+class Plans extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get year => integer()();
+  IntColumn get month => integer()();
+  TextColumn get name => text().withLength(min: 1, max: 60)();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
@@ -68,6 +81,15 @@ class AppSettingsTable extends Table {
   /// Undo 스택 JSON. 시프트 변경 시 직전 월 시프트 list snapshot을 누적.
   /// NULL이면 빈 스택. 최대 5개 entry.
   TextColumn get undoStackJson => text().nullable()();
+
+  /// 현재 활성 plan id. 0 = 메인, >0 = 모의안. 기본값 0.
+  IntColumn get activePlanId => integer().withDefault(const Constant(0))();
+
+  /// 한국 노동법 준수 모드. 활성화 시 야간/연장/주휴/공제 등 모든 고급 옵션 노출 +
+  /// Job별 옵션이 실제 계산에 반영. 비활성화 시 단순 시급×시간만, 고급 옵션 UI 숨김.
+  /// 기본값 true (한국어 locale 가정). 영어 locale 신규 설치 시 onCreate에서 false로 세팅 가능.
+  BoolColumn get koreanLaborLawCompliance =>
+      boolean().withDefault(const Constant(true))();
 
   DateTimeColumn get updatedAt => dateTime()();
 

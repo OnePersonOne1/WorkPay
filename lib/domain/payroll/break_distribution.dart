@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 import '../../core/time/work_segment.dart';
 
 /// 휴게시간(분)을 각 segment에 길이 비례로 차감한다.

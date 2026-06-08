@@ -1314,6 +1314,16 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<int> planId = GeneratedColumn<int>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1346,6 +1356,7 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
     breakStartAt,
     hourlyWageSnapshot,
     memo,
+    planId,
     createdAt,
     updatedAt,
   ];
@@ -1423,6 +1434,12 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
         memo.isAcceptableOrUnknown(data['memo']!, _memoMeta),
       );
     }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1480,6 +1497,10 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
         DriftSqlType.string,
         data['${effectivePrefix}memo'],
       ),
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plan_id'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1506,6 +1527,9 @@ class Shift extends DataClass implements Insertable<Shift> {
   final DateTime? breakStartAt;
   final int hourlyWageSnapshot;
   final String? memo;
+
+  /// 시프트가 속한 plan. 0 = 메인(영구), >0 = 모의안(plans.id 참조).
+  final int planId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Shift({
@@ -1517,6 +1541,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     this.breakStartAt,
     required this.hourlyWageSnapshot,
     this.memo,
+    required this.planId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1535,6 +1560,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     if (!nullToAbsent || memo != null) {
       map['memo'] = Variable<String>(memo);
     }
+    map['plan_id'] = Variable<int>(planId);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1552,6 +1578,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           : Value(breakStartAt),
       hourlyWageSnapshot: Value(hourlyWageSnapshot),
       memo: memo == null && nullToAbsent ? const Value.absent() : Value(memo),
+      planId: Value(planId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1571,6 +1598,7 @@ class Shift extends DataClass implements Insertable<Shift> {
       breakStartAt: serializer.fromJson<DateTime?>(json['breakStartAt']),
       hourlyWageSnapshot: serializer.fromJson<int>(json['hourlyWageSnapshot']),
       memo: serializer.fromJson<String?>(json['memo']),
+      planId: serializer.fromJson<int>(json['planId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1587,6 +1615,7 @@ class Shift extends DataClass implements Insertable<Shift> {
       'breakStartAt': serializer.toJson<DateTime?>(breakStartAt),
       'hourlyWageSnapshot': serializer.toJson<int>(hourlyWageSnapshot),
       'memo': serializer.toJson<String?>(memo),
+      'planId': serializer.toJson<int>(planId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1601,6 +1630,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     Value<DateTime?> breakStartAt = const Value.absent(),
     int? hourlyWageSnapshot,
     Value<String?> memo = const Value.absent(),
+    int? planId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Shift(
@@ -1612,6 +1642,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     breakStartAt: breakStartAt.present ? breakStartAt.value : this.breakStartAt,
     hourlyWageSnapshot: hourlyWageSnapshot ?? this.hourlyWageSnapshot,
     memo: memo.present ? memo.value : this.memo,
+    planId: planId ?? this.planId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1631,6 +1662,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           ? data.hourlyWageSnapshot.value
           : this.hourlyWageSnapshot,
       memo: data.memo.present ? data.memo.value : this.memo,
+      planId: data.planId.present ? data.planId.value : this.planId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1647,6 +1679,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           ..write('breakStartAt: $breakStartAt, ')
           ..write('hourlyWageSnapshot: $hourlyWageSnapshot, ')
           ..write('memo: $memo, ')
+          ..write('planId: $planId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1663,6 +1696,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     breakStartAt,
     hourlyWageSnapshot,
     memo,
+    planId,
     createdAt,
     updatedAt,
   );
@@ -1678,6 +1712,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           other.breakStartAt == this.breakStartAt &&
           other.hourlyWageSnapshot == this.hourlyWageSnapshot &&
           other.memo == this.memo &&
+          other.planId == this.planId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1691,6 +1726,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
   final Value<DateTime?> breakStartAt;
   final Value<int> hourlyWageSnapshot;
   final Value<String?> memo;
+  final Value<int> planId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const ShiftsCompanion({
@@ -1702,6 +1738,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     this.breakStartAt = const Value.absent(),
     this.hourlyWageSnapshot = const Value.absent(),
     this.memo = const Value.absent(),
+    this.planId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1714,6 +1751,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     this.breakStartAt = const Value.absent(),
     required int hourlyWageSnapshot,
     this.memo = const Value.absent(),
+    this.planId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : jobId = Value(jobId),
@@ -1731,6 +1769,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Expression<DateTime>? breakStartAt,
     Expression<int>? hourlyWageSnapshot,
     Expression<String>? memo,
+    Expression<int>? planId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -1744,6 +1783,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       if (hourlyWageSnapshot != null)
         'hourly_wage_snapshot': hourlyWageSnapshot,
       if (memo != null) 'memo': memo,
+      if (planId != null) 'plan_id': planId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -1758,6 +1798,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Value<DateTime?>? breakStartAt,
     Value<int>? hourlyWageSnapshot,
     Value<String?>? memo,
+    Value<int>? planId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -1770,6 +1811,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       breakStartAt: breakStartAt ?? this.breakStartAt,
       hourlyWageSnapshot: hourlyWageSnapshot ?? this.hourlyWageSnapshot,
       memo: memo ?? this.memo,
+      planId: planId ?? this.planId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1802,6 +1844,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     if (memo.present) {
       map['memo'] = Variable<String>(memo.value);
     }
+    if (planId.present) {
+      map['plan_id'] = Variable<int>(planId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1822,6 +1867,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
           ..write('breakStartAt: $breakStartAt, ')
           ..write('hourlyWageSnapshot: $hourlyWageSnapshot, ')
           ..write('memo: $memo, ')
+          ..write('planId: $planId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1925,6 +1971,33 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _activePlanIdMeta = const VerificationMeta(
+    'activePlanId',
+  );
+  @override
+  late final GeneratedColumn<int> activePlanId = GeneratedColumn<int>(
+    'active_plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _koreanLaborLawComplianceMeta =
+      const VerificationMeta('koreanLaborLawCompliance');
+  @override
+  late final GeneratedColumn<bool> koreanLaborLawCompliance =
+      GeneratedColumn<bool>(
+        'korean_labor_law_compliance',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("korean_labor_law_compliance" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1946,6 +2019,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     payrollConstantsJson,
     use24HourFormat,
     undoStackJson,
+    activePlanId,
+    koreanLaborLawCompliance,
     updatedAt,
   ];
   @override
@@ -2022,6 +2097,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('active_plan_id')) {
+      context.handle(
+        _activePlanIdMeta,
+        activePlanId.isAcceptableOrUnknown(
+          data['active_plan_id']!,
+          _activePlanIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('korean_labor_law_compliance')) {
+      context.handle(
+        _koreanLaborLawComplianceMeta,
+        koreanLaborLawCompliance.isAcceptableOrUnknown(
+          data['korean_labor_law_compliance']!,
+          _koreanLaborLawComplianceMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2071,6 +2164,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}undo_stack_json'],
       ),
+      activePlanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}active_plan_id'],
+      )!,
+      koreanLaborLawCompliance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}korean_labor_law_compliance'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2103,6 +2204,14 @@ class AppSettingsTableData extends DataClass
   /// Undo 스택 JSON. 시프트 변경 시 직전 월 시프트 list snapshot을 누적.
   /// NULL이면 빈 스택. 최대 5개 entry.
   final String? undoStackJson;
+
+  /// 현재 활성 plan id. 0 = 메인, >0 = 모의안. 기본값 0.
+  final int activePlanId;
+
+  /// 한국 노동법 준수 모드. 활성화 시 야간/연장/주휴/공제 등 모든 고급 옵션 노출 +
+  /// Job별 옵션이 실제 계산에 반영. 비활성화 시 단순 시급×시간만, 고급 옵션 UI 숨김.
+  /// 기본값 true (한국어 locale 가정). 영어 locale 신규 설치 시 onCreate에서 false로 세팅 가능.
+  final bool koreanLaborLawCompliance;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2113,6 +2222,8 @@ class AppSettingsTableData extends DataClass
     this.payrollConstantsJson,
     required this.use24HourFormat,
     this.undoStackJson,
+    required this.activePlanId,
+    required this.koreanLaborLawCompliance,
     required this.updatedAt,
   });
   @override
@@ -2132,6 +2243,10 @@ class AppSettingsTableData extends DataClass
     if (!nullToAbsent || undoStackJson != null) {
       map['undo_stack_json'] = Variable<String>(undoStackJson);
     }
+    map['active_plan_id'] = Variable<int>(activePlanId);
+    map['korean_labor_law_compliance'] = Variable<bool>(
+      koreanLaborLawCompliance,
+    );
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2152,6 +2267,8 @@ class AppSettingsTableData extends DataClass
       undoStackJson: undoStackJson == null && nullToAbsent
           ? const Value.absent()
           : Value(undoStackJson),
+      activePlanId: Value(activePlanId),
+      koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2172,6 +2289,10 @@ class AppSettingsTableData extends DataClass
       ),
       use24HourFormat: serializer.fromJson<bool>(json['use24HourFormat']),
       undoStackJson: serializer.fromJson<String?>(json['undoStackJson']),
+      activePlanId: serializer.fromJson<int>(json['activePlanId']),
+      koreanLaborLawCompliance: serializer.fromJson<bool>(
+        json['koreanLaborLawCompliance'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2187,6 +2308,10 @@ class AppSettingsTableData extends DataClass
       'payrollConstantsJson': serializer.toJson<String?>(payrollConstantsJson),
       'use24HourFormat': serializer.toJson<bool>(use24HourFormat),
       'undoStackJson': serializer.toJson<String?>(undoStackJson),
+      'activePlanId': serializer.toJson<int>(activePlanId),
+      'koreanLaborLawCompliance': serializer.toJson<bool>(
+        koreanLaborLawCompliance,
+      ),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2200,6 +2325,8 @@ class AppSettingsTableData extends DataClass
     Value<String?> payrollConstantsJson = const Value.absent(),
     bool? use24HourFormat,
     Value<String?> undoStackJson = const Value.absent(),
+    int? activePlanId,
+    bool? koreanLaborLawCompliance,
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2214,6 +2341,9 @@ class AppSettingsTableData extends DataClass
     undoStackJson: undoStackJson.present
         ? undoStackJson.value
         : this.undoStackJson,
+    activePlanId: activePlanId ?? this.activePlanId,
+    koreanLaborLawCompliance:
+        koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2236,6 +2366,12 @@ class AppSettingsTableData extends DataClass
       undoStackJson: data.undoStackJson.present
           ? data.undoStackJson.value
           : this.undoStackJson,
+      activePlanId: data.activePlanId.present
+          ? data.activePlanId.value
+          : this.activePlanId,
+      koreanLaborLawCompliance: data.koreanLaborLawCompliance.present
+          ? data.koreanLaborLawCompliance.value
+          : this.koreanLaborLawCompliance,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2251,6 +2387,8 @@ class AppSettingsTableData extends DataClass
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('use24HourFormat: $use24HourFormat, ')
           ..write('undoStackJson: $undoStackJson, ')
+          ..write('activePlanId: $activePlanId, ')
+          ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2266,6 +2404,8 @@ class AppSettingsTableData extends DataClass
     payrollConstantsJson,
     use24HourFormat,
     undoStackJson,
+    activePlanId,
+    koreanLaborLawCompliance,
     updatedAt,
   );
   @override
@@ -2280,6 +2420,8 @@ class AppSettingsTableData extends DataClass
           other.payrollConstantsJson == this.payrollConstantsJson &&
           other.use24HourFormat == this.use24HourFormat &&
           other.undoStackJson == this.undoStackJson &&
+          other.activePlanId == this.activePlanId &&
+          other.koreanLaborLawCompliance == this.koreanLaborLawCompliance &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2292,6 +2434,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<String?> payrollConstantsJson;
   final Value<bool> use24HourFormat;
   final Value<String?> undoStackJson;
+  final Value<int> activePlanId;
+  final Value<bool> koreanLaborLawCompliance;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2302,6 +2446,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.payrollConstantsJson = const Value.absent(),
     this.use24HourFormat = const Value.absent(),
     this.undoStackJson = const Value.absent(),
+    this.activePlanId = const Value.absent(),
+    this.koreanLaborLawCompliance = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2313,6 +2459,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.payrollConstantsJson = const Value.absent(),
     this.use24HourFormat = const Value.absent(),
     this.undoStackJson = const Value.absent(),
+    this.activePlanId = const Value.absent(),
+    this.koreanLaborLawCompliance = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2325,6 +2473,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<String>? payrollConstantsJson,
     Expression<bool>? use24HourFormat,
     Expression<String>? undoStackJson,
+    Expression<int>? activePlanId,
+    Expression<bool>? koreanLaborLawCompliance,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2337,6 +2487,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
         'payroll_constants_json': payrollConstantsJson,
       if (use24HourFormat != null) 'use24_hour_format': use24HourFormat,
       if (undoStackJson != null) 'undo_stack_json': undoStackJson,
+      if (activePlanId != null) 'active_plan_id': activePlanId,
+      if (koreanLaborLawCompliance != null)
+        'korean_labor_law_compliance': koreanLaborLawCompliance,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2350,6 +2503,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<String?>? payrollConstantsJson,
     Value<bool>? use24HourFormat,
     Value<String?>? undoStackJson,
+    Value<int>? activePlanId,
+    Value<bool>? koreanLaborLawCompliance,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2361,6 +2516,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       payrollConstantsJson: payrollConstantsJson ?? this.payrollConstantsJson,
       use24HourFormat: use24HourFormat ?? this.use24HourFormat,
       undoStackJson: undoStackJson ?? this.undoStackJson,
+      activePlanId: activePlanId ?? this.activePlanId,
+      koreanLaborLawCompliance:
+          koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2394,6 +2552,14 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     if (undoStackJson.present) {
       map['undo_stack_json'] = Variable<String>(undoStackJson.value);
     }
+    if (activePlanId.present) {
+      map['active_plan_id'] = Variable<int>(activePlanId.value);
+    }
+    if (koreanLaborLawCompliance.present) {
+      map['korean_labor_law_compliance'] = Variable<bool>(
+        koreanLaborLawCompliance.value,
+      );
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2411,6 +2577,404 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('use24HourFormat: $use24HourFormat, ')
           ..write('undoStackJson: $undoStackJson, ')
+          ..write('activePlanId: $activePlanId, ')
+          ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _monthMeta = const VerificationMeta('month');
+  @override
+  late final GeneratedColumn<int> month = GeneratedColumn<int>(
+    'month',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 60,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    year,
+    month,
+    name,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Plan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('year')) {
+      context.handle(
+        _yearMeta,
+        year.isAcceptableOrUnknown(data['year']!, _yearMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_yearMeta);
+    }
+    if (data.containsKey('month')) {
+      context.handle(
+        _monthMeta,
+        month.isAcceptableOrUnknown(data['month']!, _monthMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Plan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Plan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      year: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}year'],
+      )!,
+      month: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}month'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlansTable createAlias(String alias) {
+    return $PlansTable(attachedDatabase, alias);
+  }
+}
+
+class Plan extends DataClass implements Insertable<Plan> {
+  final int id;
+  final int year;
+  final int month;
+  final String name;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Plan({
+    required this.id,
+    required this.year,
+    required this.month,
+    required this.name,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['year'] = Variable<int>(year);
+    map['month'] = Variable<int>(month);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PlansCompanion toCompanion(bool nullToAbsent) {
+    return PlansCompanion(
+      id: Value(id),
+      year: Value(year),
+      month: Value(month),
+      name: Value(name),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Plan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Plan(
+      id: serializer.fromJson<int>(json['id']),
+      year: serializer.fromJson<int>(json['year']),
+      month: serializer.fromJson<int>(json['month']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'year': serializer.toJson<int>(year),
+      'month': serializer.toJson<int>(month),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Plan copyWith({
+    int? id,
+    int? year,
+    int? month,
+    String? name,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Plan(
+    id: id ?? this.id,
+    year: year ?? this.year,
+    month: month ?? this.month,
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Plan copyWithCompanion(PlansCompanion data) {
+    return Plan(
+      id: data.id.present ? data.id.value : this.id,
+      year: data.year.present ? data.year.value : this.year,
+      month: data.month.present ? data.month.value : this.month,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Plan(')
+          ..write('id: $id, ')
+          ..write('year: $year, ')
+          ..write('month: $month, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, year, month, name, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Plan &&
+          other.id == this.id &&
+          other.year == this.year &&
+          other.month == this.month &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PlansCompanion extends UpdateCompanion<Plan> {
+  final Value<int> id;
+  final Value<int> year;
+  final Value<int> month;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const PlansCompanion({
+    this.id = const Value.absent(),
+    this.year = const Value.absent(),
+    this.month = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  PlansCompanion.insert({
+    this.id = const Value.absent(),
+    required int year,
+    required int month,
+    required String name,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : year = Value(year),
+       month = Value(month),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Plan> custom({
+    Expression<int>? id,
+    Expression<int>? year,
+    Expression<int>? month,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (year != null) 'year': year,
+      if (month != null) 'month': month,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  PlansCompanion copyWith({
+    Value<int>? id,
+    Value<int>? year,
+    Value<int>? month,
+    Value<String>? name,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return PlansCompanion(
+      id: id ?? this.id,
+      year: year ?? this.year,
+      month: month ?? this.month,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
+    if (month.present) {
+      map['month'] = Variable<int>(month.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlansCompanion(')
+          ..write('id: $id, ')
+          ..write('year: $year, ')
+          ..write('month: $month, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2427,11 +2991,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppSettingsTableTable appSettingsTable = $AppSettingsTableTable(
     this,
   );
+  late final $PlansTable plans = $PlansTable(this);
   late final JobDao jobDao = JobDao(this as AppDatabase);
   late final ShiftDao shiftDao = ShiftDao(this as AppDatabase);
   late final AppSettingsDao appSettingsDao = AppSettingsDao(
     this as AppDatabase,
   );
+  late final PlanDao planDao = PlanDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2441,6 +3007,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     jobPayrollOptionsTable,
     shifts,
     appSettingsTable,
+    plans,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3384,6 +3951,7 @@ typedef $$ShiftsTableCreateCompanionBuilder =
       Value<DateTime?> breakStartAt,
       required int hourlyWageSnapshot,
       Value<String?> memo,
+      Value<int> planId,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -3397,6 +3965,7 @@ typedef $$ShiftsTableUpdateCompanionBuilder =
       Value<DateTime?> breakStartAt,
       Value<int> hourlyWageSnapshot,
       Value<String?> memo,
+      Value<int> planId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -3464,6 +4033,11 @@ class $$ShiftsTableFilterComposer
 
   ColumnFilters<String> get memo => $composableBuilder(
     column: $table.memo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get planId => $composableBuilder(
+    column: $table.planId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3545,6 +4119,11 @@ class $$ShiftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3615,6 +4194,9 @@ class $$ShiftsTableAnnotationComposer
   GeneratedColumn<String> get memo =>
       $composableBuilder(column: $table.memo, builder: (column) => column);
 
+  GeneratedColumn<int> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -3681,6 +4263,7 @@ class $$ShiftsTableTableManager
                 Value<DateTime?> breakStartAt = const Value.absent(),
                 Value<int> hourlyWageSnapshot = const Value.absent(),
                 Value<String?> memo = const Value.absent(),
+                Value<int> planId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => ShiftsCompanion(
@@ -3692,6 +4275,7 @@ class $$ShiftsTableTableManager
                 breakStartAt: breakStartAt,
                 hourlyWageSnapshot: hourlyWageSnapshot,
                 memo: memo,
+                planId: planId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -3705,6 +4289,7 @@ class $$ShiftsTableTableManager
                 Value<DateTime?> breakStartAt = const Value.absent(),
                 required int hourlyWageSnapshot,
                 Value<String?> memo = const Value.absent(),
+                Value<int> planId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => ShiftsCompanion.insert(
@@ -3716,6 +4301,7 @@ class $$ShiftsTableTableManager
                 breakStartAt: breakStartAt,
                 hourlyWageSnapshot: hourlyWageSnapshot,
                 memo: memo,
+                planId: planId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -3794,6 +4380,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> payrollConstantsJson,
       Value<bool> use24HourFormat,
       Value<String?> undoStackJson,
+      Value<int> activePlanId,
+      Value<bool> koreanLaborLawCompliance,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -3806,6 +4394,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> payrollConstantsJson,
       Value<bool> use24HourFormat,
       Value<String?> undoStackJson,
+      Value<int> activePlanId,
+      Value<bool> koreanLaborLawCompliance,
       Value<DateTime> updatedAt,
     });
 
@@ -3855,6 +4445,16 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get undoStackJson => $composableBuilder(
     column: $table.undoStackJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get activePlanId => $composableBuilder(
+    column: $table.activePlanId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get koreanLaborLawCompliance => $composableBuilder(
+    column: $table.koreanLaborLawCompliance,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3913,6 +4513,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get activePlanId => $composableBuilder(
+    column: $table.activePlanId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get koreanLaborLawCompliance => $composableBuilder(
+    column: $table.koreanLaborLawCompliance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3959,6 +4569,16 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<String> get undoStackJson => $composableBuilder(
     column: $table.undoStackJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get activePlanId => $composableBuilder(
+    column: $table.activePlanId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get koreanLaborLawCompliance => $composableBuilder(
+    column: $table.koreanLaborLawCompliance,
     builder: (column) => column,
   );
 
@@ -4011,6 +4631,8 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> payrollConstantsJson = const Value.absent(),
                 Value<bool> use24HourFormat = const Value.absent(),
                 Value<String?> undoStackJson = const Value.absent(),
+                Value<int> activePlanId = const Value.absent(),
+                Value<bool> koreanLaborLawCompliance = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -4021,6 +4643,8 @@ class $$AppSettingsTableTableTableManager
                 payrollConstantsJson: payrollConstantsJson,
                 use24HourFormat: use24HourFormat,
                 undoStackJson: undoStackJson,
+                activePlanId: activePlanId,
+                koreanLaborLawCompliance: koreanLaborLawCompliance,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -4033,6 +4657,8 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> payrollConstantsJson = const Value.absent(),
                 Value<bool> use24HourFormat = const Value.absent(),
                 Value<String?> undoStackJson = const Value.absent(),
+                Value<int> activePlanId = const Value.absent(),
+                Value<bool> koreanLaborLawCompliance = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -4043,6 +4669,8 @@ class $$AppSettingsTableTableTableManager
                 payrollConstantsJson: payrollConstantsJson,
                 use24HourFormat: use24HourFormat,
                 undoStackJson: undoStackJson,
+                activePlanId: activePlanId,
+                koreanLaborLawCompliance: koreanLaborLawCompliance,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -4074,6 +4702,212 @@ typedef $$AppSettingsTableTableProcessedTableManager =
       AppSettingsTableData,
       PrefetchHooks Function()
     >;
+typedef $$PlansTableCreateCompanionBuilder =
+    PlansCompanion Function({
+      Value<int> id,
+      required int year,
+      required int month,
+      required String name,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+    });
+typedef $$PlansTableUpdateCompanionBuilder =
+    PlansCompanion Function({
+      Value<int> id,
+      Value<int> year,
+      Value<int> month,
+      Value<String> name,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => column);
+
+  GeneratedColumn<int> get month =>
+      $composableBuilder(column: $table.month, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlansTable,
+          Plan,
+          $$PlansTableFilterComposer,
+          $$PlansTableOrderingComposer,
+          $$PlansTableAnnotationComposer,
+          $$PlansTableCreateCompanionBuilder,
+          $$PlansTableUpdateCompanionBuilder,
+          (Plan, BaseReferences<_$AppDatabase, $PlansTable, Plan>),
+          Plan,
+          PrefetchHooks Function()
+        > {
+  $$PlansTableTableManager(_$AppDatabase db, $PlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> year = const Value.absent(),
+                Value<int> month = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => PlansCompanion(
+                id: id,
+                year: year,
+                month: month,
+                name: name,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int year,
+                required int month,
+                required String name,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+              }) => PlansCompanion.insert(
+                id: id,
+                year: year,
+                month: month,
+                name: name,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlansTable,
+      Plan,
+      $$PlansTableFilterComposer,
+      $$PlansTableOrderingComposer,
+      $$PlansTableAnnotationComposer,
+      $$PlansTableCreateCompanionBuilder,
+      $$PlansTableUpdateCompanionBuilder,
+      (Plan, BaseReferences<_$AppDatabase, $PlansTable, Plan>),
+      Plan,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4088,4 +4922,6 @@ class $AppDatabaseManager {
       $$ShiftsTableTableManager(_db, _db.shifts);
   $$AppSettingsTableTableTableManager get appSettingsTable =>
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
+  $$PlansTableTableManager get plans =>
+      $$PlansTableTableManager(_db, _db.plans);
 }
