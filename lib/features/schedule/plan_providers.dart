@@ -32,10 +32,10 @@ final mockPlansForSelectedMonthProvider =
   return repo.watchForMonth(month.year, month.month);
 });
 
-/// 다음 모의안 이름 자동 생성: "M월 모의안 N" (N은 기존 중 가장 큰 + 1).
+/// 다음 가안 이름 자동 생성: "M월 가안 N" (N은 기존 중 가장 큰 + 1).
 String generateMockPlanName(int month, List<Plan> existingForMonth) {
   var maxN = 0;
-  final prefix = '$month월 모의안 ';
+  final prefix = '$month월 가안 ';
   for (final p in existingForMonth) {
     if (p.name.startsWith(prefix)) {
       final rest = p.name.substring(prefix.length).trim();
@@ -43,7 +43,7 @@ String generateMockPlanName(int month, List<Plan> existingForMonth) {
       if (n != null && n > maxN) maxN = n;
     }
   }
-  return '$month월 모의안 ${maxN + 1}';
+  return '$month월 가안 ${maxN + 1}';
 }
 
 /// 급여 명세서 페이지의 보기용 planId. 활성 plan과 독립적.

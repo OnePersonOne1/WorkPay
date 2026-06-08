@@ -318,13 +318,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shiftSheetDelete => 'Delete this shift';
 
   @override
-  String get shiftSheetDeletedSnapshot => 'Before edit';
+  String get shiftSheetDeletedSnapshot => 'Delete shift';
 
   @override
-  String get shiftSheetSavedSnapshot => 'Before save';
+  String get shiftSheetSavedSnapshot => 'Edit shift';
 
   @override
-  String get shiftSheetCreatedSnapshot => 'Before add';
+  String get shiftSheetCreatedSnapshot => 'Add shift';
 
   @override
   String get recurringTitle => 'Add Recurring Shifts';

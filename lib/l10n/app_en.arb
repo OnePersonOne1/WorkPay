@@ -114,9 +114,9 @@
   "shiftSheetOverlapSave": "Save Anyway",
   "shiftSheetSelectJob": "Pick a job",
   "shiftSheetDelete": "Delete this shift",
-  "shiftSheetDeletedSnapshot": "Before edit",
-  "shiftSheetSavedSnapshot": "Before save",
-  "shiftSheetCreatedSnapshot": "Before add",
+  "shiftSheetDeletedSnapshot": "Delete shift",
+  "shiftSheetSavedSnapshot": "Edit shift",
+  "shiftSheetCreatedSnapshot": "Add shift",
 
   "recurringTitle": "Add Recurring Shifts",
   "recurringHelp": "Pick a date range and weekdays. Shifts with the same time/job will be created on matching days.",

@@ -269,13 +269,13 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleNoShifts.
   ///
   /// In ko, this message translates to:
-  /// **'이 날의 시프트가 없습니다.'**
+  /// **'이날은 시프트가 없어요.'**
   String get scheduleNoShifts;
 
   /// No description provided for @scheduleNoJobsTitle.
   ///
   /// In ko, this message translates to:
-  /// **'근무처가 없습니다'**
+  /// **'근무처가 없어요'**
   String get scheduleNoJobsTitle;
 
   /// No description provided for @scheduleNoJobsHint.
@@ -305,13 +305,13 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleDefaultJobNone.
   ///
   /// In ko, this message translates to:
-  /// **'기본 근무지 미선택 — 시프트 추가 시 첫째 근무처가 자동 선택돼요'**
+  /// **'기본 근무처 미선택 — 시프트 추가 시 첫 번째 근무처가 자동 선택돼요'**
   String get scheduleDefaultJobNone;
 
   /// No description provided for @scheduleDefaultJobLabel.
   ///
   /// In ko, this message translates to:
-  /// **'기본 근무지: {jobName} (시프트 추가 시 자동 선택, 변경 가능)'**
+  /// **'기본 근무처: {jobName} (시프트 추가 시 자동 선택, 변경 가능)'**
   String scheduleDefaultJobLabel(String jobName);
 
   /// No description provided for @scheduleVisDaily.
@@ -347,7 +347,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleMonthSummary.
   ///
   /// In ko, this message translates to:
-  /// **'이 달 {hours}h · {amount}원'**
+  /// **'이번 달 {hours}h · {amount}원'**
   String scheduleMonthSummary(String hours, String amount);
 
   /// No description provided for @scheduleGrossBefore.
@@ -383,7 +383,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleDeleteMonthBody.
   ///
   /// In ko, this message translates to:
-  /// **'이 달의 시프트 {count}개를 모두 삭제할까요?\n\n되돌리기로 복원할 수 있어요 (최근 5개 동작까지).'**
+  /// **'이번 달 시프트 {count}개를 모두 삭제할까요?\n\n되돌리기로 복원할 수 있어요 (최근 5개 동작까지).'**
   String scheduleDeleteMonthBody(int count);
 
   /// No description provided for @scheduleDeleteMonthSnap.
@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleNoMockHint.
   ///
   /// In ko, this message translates to:
-  /// **'— 모의안으로 시뮬레이션 가능'**
+  /// **'가안으로 시뮬레이션할 수 있어요'**
   String get scheduleNoMockHint;
 
   /// No description provided for @weekMon.
@@ -605,7 +605,7 @@ abstract class AppLocalizations {
   /// No description provided for @shiftSheetOverlapBody.
   ///
   /// In ko, this message translates to:
-  /// **'다음 시프트와 시간이 겹칩니다:'**
+  /// **'다음 시프트와 시간이 겹쳐요:'**
   String get shiftSheetOverlapBody;
 
   /// No description provided for @shiftSheetOverlapItem.
@@ -635,19 +635,19 @@ abstract class AppLocalizations {
   /// No description provided for @shiftSheetDeletedSnapshot.
   ///
   /// In ko, this message translates to:
-  /// **'시프트 편집 전'**
+  /// **'시프트 삭제'**
   String get shiftSheetDeletedSnapshot;
 
   /// No description provided for @shiftSheetSavedSnapshot.
   ///
   /// In ko, this message translates to:
-  /// **'시프트 저장 전'**
+  /// **'시프트 편집'**
   String get shiftSheetSavedSnapshot;
 
   /// No description provided for @shiftSheetCreatedSnapshot.
   ///
   /// In ko, this message translates to:
-  /// **'시프트 추가 전'**
+  /// **'시프트 추가'**
   String get shiftSheetCreatedSnapshot;
 
   /// No description provided for @recurringTitle.
@@ -713,13 +713,13 @@ abstract class AppLocalizations {
   /// No description provided for @recurringPreview.
   ///
   /// In ko, this message translates to:
-  /// **'총 {count}개 시프트 생성됩니다 ({overlapCount}개는 기존과 겹침)'**
+  /// **'총 {count}개 시프트가 생성돼요 ({overlapCount}개는 기존과 겹침)'**
   String recurringPreview(int count, int overlapCount);
 
   /// No description provided for @recurringOverlapConfirm.
   ///
   /// In ko, this message translates to:
-  /// **'겹치는 시프트가 {count}개 있습니다. 그래도 만드시겠어요?'**
+  /// **'겹치는 시프트가 {count}개 있어요. 그래도 만들까요?'**
   String recurringOverlapConfirm(int count);
 
   /// No description provided for @recurringCreate.
@@ -749,7 +749,7 @@ abstract class AppLocalizations {
   /// No description provided for @planSelectMock.
   ///
   /// In ko, this message translates to:
-  /// **'모의안 선택'**
+  /// **'가안 선택'**
   String get planSelectMock;
 
   /// No description provided for @planLoadFromMain.
@@ -761,25 +761,25 @@ abstract class AppLocalizations {
   /// No description provided for @planReplaceMain.
   ///
   /// In ko, this message translates to:
-  /// **'\"{name}\"을 메인으로 교체'**
+  /// **'\"{name}\"을(를) 메인으로 교체'**
   String planReplaceMain(String name);
 
   /// No description provided for @planNewMock.
   ///
   /// In ko, this message translates to:
-  /// **'{month}월 새 모의안 추가'**
+  /// **'{month}월 새 가안 추가'**
   String planNewMock(int month);
 
   /// No description provided for @planNoneThisMonth.
   ///
   /// In ko, this message translates to:
-  /// **'이 달의 모의안이 없어요'**
+  /// **'이번 달 가안이 없어요'**
   String get planNoneThisMonth;
 
   /// No description provided for @planAutoName.
   ///
   /// In ko, this message translates to:
-  /// **'{month}월 모의안 {n}'**
+  /// **'{month}월 가안 {n}'**
   String planAutoName(int month, int n);
 
   /// No description provided for @planLoadConfirmTitle.
@@ -791,7 +791,7 @@ abstract class AppLocalizations {
   /// No description provided for @planLoadConfirmBody.
   ///
   /// In ko, this message translates to:
-  /// **'메인의 {year}년 {month}월 시프트를 \"{name}\"으로\n복사합니다. 현재 \"{name}\"의 시프트는 모두 사라집니다.\n\n되돌리기로 복원할 수 있어요.'**
+  /// **'메인의 {year}년 {month}월 시프트를 \"{name}\"으로\n복사해요. 현재 \"{name}\"의 시프트는 모두 사라져요.\n\n되돌리기로 복원할 수 있어요.'**
   String planLoadConfirmBody(int year, int month, String name);
 
   /// No description provided for @planLoadDone.
@@ -809,13 +809,13 @@ abstract class AppLocalizations {
   /// No description provided for @planReplaceConfirmTitle.
   ///
   /// In ko, this message translates to:
-  /// **'\"{name}\"을 메인으로 교체'**
+  /// **'\"{name}\"을(를) 메인으로 교체'**
   String planReplaceConfirmTitle(String name);
 
   /// No description provided for @planReplaceConfirmBody.
   ///
   /// In ko, this message translates to:
-  /// **'메인의 {year}년 {month}월 시프트를\n\"{name}\"의 데이터로 교체합니다.\n메인의 해당 달 시프트는 모두 사라집니다.\n\n되돌리기로 복원할 수 있어요. 모의안 데이터는 그대로 유지됩니다.'**
+  /// **'메인의 {year}년 {month}월 시프트를\n\"{name}\"의 데이터로 교체해요.\n메인의 해당 달 시프트는 모두 사라져요.\n\n되돌리기로 복원할 수 있어요. 가안 데이터는 그대로 유지돼요.'**
   String planReplaceConfirmBody(int year, int month, String name);
 
   /// No description provided for @planReplaceDone.
@@ -839,19 +839,19 @@ abstract class AppLocalizations {
   /// No description provided for @planMockDeleteTitle.
   ///
   /// In ko, this message translates to:
-  /// **'모의안 삭제'**
+  /// **'가안 삭제'**
   String get planMockDeleteTitle;
 
   /// No description provided for @planMockDeleteBody.
   ///
   /// In ko, this message translates to:
-  /// **'\"{name}\"을(를) 삭제하시겠습니까?\n\n되돌리기로 복원할 수 있어요.'**
+  /// **'\"{name}\"을(를) 삭제할까요?\n\n되돌리기로 복원할 수 있어요.'**
   String planMockDeleteBody(String name);
 
   /// No description provided for @planMockDeleteTooltip.
   ///
   /// In ko, this message translates to:
-  /// **'모의안 삭제'**
+  /// **'가안 삭제'**
   String get planMockDeleteTooltip;
 
   /// No description provided for @planMockDeleted.
@@ -869,7 +869,7 @@ abstract class AppLocalizations {
   /// No description provided for @planSelectTooltip.
   ///
   /// In ko, this message translates to:
-  /// **'모의안 선택'**
+  /// **'가안 선택'**
   String get planSelectTooltip;
 
   /// No description provided for @jobsTitle.
@@ -887,7 +887,7 @@ abstract class AppLocalizations {
   /// No description provided for @jobsEmpty.
   ///
   /// In ko, this message translates to:
-  /// **'등록된 근무처가 없습니다'**
+  /// **'등록된 근무처가 없어요'**
   String get jobsEmpty;
 
   /// No description provided for @jobsEmptyHint.
@@ -1223,13 +1223,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLaborLawHint.
   ///
   /// In ko, this message translates to:
-  /// **'야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨집니다.'**
+  /// **'야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.'**
   String get settingsLaborLawHint;
 
   /// No description provided for @settingsAdvancedConstants.
   ///
   /// In ko, this message translates to:
-  /// **'고고급 설정 (가산률·상수)'**
+  /// **'전문가 설정 (가산률·상수)'**
   String get settingsAdvancedConstants;
 
   /// No description provided for @settingsSectionBackup.
@@ -1277,13 +1277,13 @@ abstract class AppLocalizations {
   /// No description provided for @advancedTitle.
   ///
   /// In ko, this message translates to:
-  /// **'고고급 설정'**
+  /// **'전문가 설정'**
   String get advancedTitle;
 
   /// No description provided for @advancedHelp.
   ///
   /// In ko, this message translates to:
-  /// **'이 화면의 값은 기본적으로 한국 노동법 기준입니다. 변경 시 신중히 다루어주세요. 잘못된 값이 들어가면 계산이 어긋날 수 있습니다.'**
+  /// **'이 화면의 값은 기본적으로 한국 노동법 기준이에요. 변경 시 신중히 다뤄주세요. 잘못된 값이 들어가면 계산이 어긋날 수 있어요.'**
   String get advancedHelp;
 
   /// No description provided for @advancedReset.
@@ -1301,7 +1301,7 @@ abstract class AppLocalizations {
   /// No description provided for @advancedSaved.
   ///
   /// In ko, this message translates to:
-  /// **'설정이 저장되었습니다'**
+  /// **'설정을 저장했어요'**
   String get advancedSaved;
 
   /// No description provided for @advancedNightStart.
@@ -1427,7 +1427,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupExportSaved.
   ///
   /// In ko, this message translates to:
-  /// **'{path}\n에 저장됨'**
+  /// **'저장 위치:\n{path}'**
   String backupExportSaved(String path);
 
   /// No description provided for @backupExportFailed.
@@ -1445,7 +1445,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupImportConfirmBody.
   ///
   /// In ko, this message translates to:
-  /// **'현재 모든 데이터가 백업 파일의 내용으로 교체됩니다. 계속할까요?'**
+  /// **'현재 모든 데이터가 백업 파일의 내용으로 교체돼요. 계속할까요?'**
   String get backupImportConfirmBody;
 
   /// No description provided for @backupImportRestored.
@@ -1475,7 +1475,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupSectionWhatBody.
   ///
   /// In ko, this message translates to:
-  /// **'• 근무처 + 옵션\n• 모든 시프트(메인 + 모의안)\n• 모의안 메타데이터\n• 앱 설정 (테마, 시간 형식, 활성 plan 등)\n\n포함되지 않음: 되돌리기 스택 (사용자 액션 이력)'**
+  /// **'• 근무처 + 옵션\n• 모든 시프트(메인 + 가안)\n• 가안 메타데이터\n• 앱 설정 (테마, 시간 형식, 활성 plan 등)\n\n포함되지 않음: 되돌리기 스택 (사용자 액션 이력)'**
   String get backupSectionWhatBody;
 
   /// No description provided for @backupLastBackupNever.
@@ -1505,7 +1505,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportNoMockThisMonth.
   ///
   /// In ko, this message translates to:
-  /// **'— 이 달에 모의안이 없어요'**
+  /// **'이번 달에 가안이 없어요'**
   String get reportNoMockThisMonth;
 
   /// No description provided for @reportTabAll.
@@ -1523,13 +1523,13 @@ abstract class AppLocalizations {
   /// No description provided for @reportNoRecords.
   ///
   /// In ko, this message translates to:
-  /// **'이 달에 근무 기록이 없어요'**
+  /// **'이번 달에 근무 기록이 없어요'**
   String get reportNoRecords;
 
   /// No description provided for @reportNoRecordsJob.
   ///
   /// In ko, this message translates to:
-  /// **'{job} — 이 달에 근무 기록이 없어요'**
+  /// **'{job} — 이번 달에 근무 기록이 없어요'**
   String reportNoRecordsJob(String job);
 
   /// No description provided for @reportPaymentItems.
@@ -1655,7 +1655,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportGrossLabel.
   ///
   /// In ko, this message translates to:
-  /// **'총 지급 (gross)'**
+  /// **'총 지급액'**
   String get reportGrossLabel;
 
   /// No description provided for @reportTotalDeductionLabel.
@@ -1697,7 +1697,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportFootnote.
   ///
   /// In ko, this message translates to:
-  /// **'* 일급 표시는 기본급+야간+일OT+휴일 가산만 합산되며, 주OT·주휴·공제는 월 단위로만 적용됩니다.'**
+  /// **'* 일급 표시는 기본급+야간+일 연장+휴일 가산만 합산되며, 주 연장·주휴·공제는 월 단위로만 적용돼요.'**
   String get reportFootnote;
 
   /// No description provided for @reportCalcError.

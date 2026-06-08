@@ -93,10 +93,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleNextMonth => '다음 달';
 
   @override
-  String get scheduleNoShifts => '이 날의 시프트가 없습니다.';
+  String get scheduleNoShifts => '이날은 시프트가 없어요.';
 
   @override
-  String get scheduleNoJobsTitle => '근무처가 없습니다';
+  String get scheduleNoJobsTitle => '근무처가 없어요';
 
   @override
   String get scheduleNoJobsHint => '시프트를 추가하려면 먼저 근무처를 등록하세요.';
@@ -111,11 +111,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleJobsManage => '관리';
 
   @override
-  String get scheduleDefaultJobNone => '기본 근무지 미선택 — 시프트 추가 시 첫째 근무처가 자동 선택돼요';
+  String get scheduleDefaultJobNone =>
+      '기본 근무처 미선택 — 시프트 추가 시 첫 번째 근무처가 자동 선택돼요';
 
   @override
   String scheduleDefaultJobLabel(String jobName) {
-    return '기본 근무지: $jobName (시프트 추가 시 자동 선택, 변경 가능)';
+    return '기본 근무처: $jobName (시프트 추가 시 자동 선택, 변경 가능)';
   }
 
   @override
@@ -137,7 +138,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String scheduleMonthSummary(String hours, String amount) {
-    return '이 달 ${hours}h · $amount원';
+    return '이번 달 ${hours}h · $amount원';
   }
 
   @override
@@ -167,7 +168,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String scheduleDeleteMonthBody(int count) {
-    return '이 달의 시프트 $count개를 모두 삭제할까요?\n\n되돌리기로 복원할 수 있어요 (최근 5개 동작까지).';
+    return '이번 달 시프트 $count개를 모두 삭제할까요?\n\n되돌리기로 복원할 수 있어요 (최근 5개 동작까지).';
   }
 
   @override
@@ -221,7 +222,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get scheduleNoMockHint => '— 모의안으로 시뮬레이션 가능';
+  String get scheduleNoMockHint => '가안으로 시뮬레이션할 수 있어요';
 
   @override
   String get weekMon => '월';
@@ -299,7 +300,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shiftSheetOverlapTitle => '겹치는 시프트가 있어요';
 
   @override
-  String get shiftSheetOverlapBody => '다음 시프트와 시간이 겹칩니다:';
+  String get shiftSheetOverlapBody => '다음 시프트와 시간이 겹쳐요:';
 
   @override
   String shiftSheetOverlapItem(String jobName, String start, String end) {
@@ -316,13 +317,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shiftSheetDelete => '이 시프트 삭제';
 
   @override
-  String get shiftSheetDeletedSnapshot => '시프트 편집 전';
+  String get shiftSheetDeletedSnapshot => '시프트 삭제';
 
   @override
-  String get shiftSheetSavedSnapshot => '시프트 저장 전';
+  String get shiftSheetSavedSnapshot => '시프트 편집';
 
   @override
-  String get shiftSheetCreatedSnapshot => '시프트 추가 전';
+  String get shiftSheetCreatedSnapshot => '시프트 추가';
 
   @override
   String get recurringTitle => '반복 시프트 추가';
@@ -356,12 +357,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String recurringPreview(int count, int overlapCount) {
-    return '총 $count개 시프트 생성됩니다 ($overlapCount개는 기존과 겹침)';
+    return '총 $count개 시프트가 생성돼요 ($overlapCount개는 기존과 겹침)';
   }
 
   @override
   String recurringOverlapConfirm(int count) {
-    return '겹치는 시프트가 $count개 있습니다. 그래도 만드시겠어요?';
+    return '겹치는 시프트가 $count개 있어요. 그래도 만들까요?';
   }
 
   @override
@@ -381,27 +382,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get planMain => '메인';
 
   @override
-  String get planSelectMock => '모의안 선택';
+  String get planSelectMock => '가안 선택';
 
   @override
   String get planLoadFromMain => '메인에서 불러오기';
 
   @override
   String planReplaceMain(String name) {
-    return '\"$name\"을 메인으로 교체';
+    return '\"$name\"을(를) 메인으로 교체';
   }
 
   @override
   String planNewMock(int month) {
-    return '$month월 새 모의안 추가';
+    return '$month월 새 가안 추가';
   }
 
   @override
-  String get planNoneThisMonth => '이 달의 모의안이 없어요';
+  String get planNoneThisMonth => '이번 달 가안이 없어요';
 
   @override
   String planAutoName(int month, int n) {
-    return '$month월 모의안 $n';
+    return '$month월 가안 $n';
   }
 
   @override
@@ -409,7 +410,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String planLoadConfirmBody(int year, int month, String name) {
-    return '메인의 $year년 $month월 시프트를 \"$name\"으로\n복사합니다. 현재 \"$name\"의 시프트는 모두 사라집니다.\n\n되돌리기로 복원할 수 있어요.';
+    return '메인의 $year년 $month월 시프트를 \"$name\"으로\n복사해요. 현재 \"$name\"의 시프트는 모두 사라져요.\n\n되돌리기로 복원할 수 있어요.';
   }
 
   @override
@@ -424,12 +425,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String planReplaceConfirmTitle(String name) {
-    return '\"$name\"을 메인으로 교체';
+    return '\"$name\"을(를) 메인으로 교체';
   }
 
   @override
   String planReplaceConfirmBody(int year, int month, String name) {
-    return '메인의 $year년 $month월 시프트를\n\"$name\"의 데이터로 교체합니다.\n메인의 해당 달 시프트는 모두 사라집니다.\n\n되돌리기로 복원할 수 있어요. 모의안 데이터는 그대로 유지됩니다.';
+    return '메인의 $year년 $month월 시프트를\n\"$name\"의 데이터로 교체해요.\n메인의 해당 달 시프트는 모두 사라져요.\n\n되돌리기로 복원할 수 있어요. 가안 데이터는 그대로 유지돼요.';
   }
 
   @override
@@ -448,15 +449,15 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get planMockDeleteTitle => '모의안 삭제';
+  String get planMockDeleteTitle => '가안 삭제';
 
   @override
   String planMockDeleteBody(String name) {
-    return '\"$name\"을(를) 삭제하시겠습니까?\n\n되돌리기로 복원할 수 있어요.';
+    return '\"$name\"을(를) 삭제할까요?\n\n되돌리기로 복원할 수 있어요.';
   }
 
   @override
-  String get planMockDeleteTooltip => '모의안 삭제';
+  String get planMockDeleteTooltip => '가안 삭제';
 
   @override
   String planMockDeleted(String name) {
@@ -469,7 +470,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get planSelectTooltip => '모의안 선택';
+  String get planSelectTooltip => '가안 선택';
 
   @override
   String get jobsTitle => '근무처 관리';
@@ -478,7 +479,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get jobsAdd => '근무처 추가';
 
   @override
-  String get jobsEmpty => '등록된 근무처가 없습니다';
+  String get jobsEmpty => '등록된 근무처가 없어요';
 
   @override
   String get jobsEmptyHint => '+ 버튼으로 새 근무처를 추가하세요.';
@@ -660,10 +661,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsLaborLawHint =>
-      '야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨집니다.';
+      '야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.';
 
   @override
-  String get settingsAdvancedConstants => '고고급 설정 (가산률·상수)';
+  String get settingsAdvancedConstants => '전문가 설정 (가산률·상수)';
 
   @override
   String get settingsSectionBackup => '백업';
@@ -689,11 +690,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAppDescription => '광고 없는 근무 일정·월급 계산 앱';
 
   @override
-  String get advancedTitle => '고고급 설정';
+  String get advancedTitle => '전문가 설정';
 
   @override
   String get advancedHelp =>
-      '이 화면의 값은 기본적으로 한국 노동법 기준입니다. 변경 시 신중히 다루어주세요. 잘못된 값이 들어가면 계산이 어긋날 수 있습니다.';
+      '이 화면의 값은 기본적으로 한국 노동법 기준이에요. 변경 시 신중히 다뤄주세요. 잘못된 값이 들어가면 계산이 어긋날 수 있어요.';
 
   @override
   String get advancedReset => '기본값으로 초기화';
@@ -702,7 +703,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get advancedResetDone => '기본값으로 초기화됨';
 
   @override
-  String get advancedSaved => '설정이 저장되었습니다';
+  String get advancedSaved => '설정을 저장했어요';
 
   @override
   String get advancedNightStart => '야간 시작 시각 (시)';
@@ -766,7 +767,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String backupExportSaved(String path) {
-    return '$path\n에 저장됨';
+    return '저장 위치:\n$path';
   }
 
   @override
@@ -778,7 +779,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupImportConfirmTitle => '백업에서 복원';
 
   @override
-  String get backupImportConfirmBody => '현재 모든 데이터가 백업 파일의 내용으로 교체됩니다. 계속할까요?';
+  String get backupImportConfirmBody => '현재 모든 데이터가 백업 파일의 내용으로 교체돼요. 계속할까요?';
 
   @override
   String backupImportRestored(int jobs, int shifts) {
@@ -800,7 +801,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get backupSectionWhatBody =>
-      '• 근무처 + 옵션\n• 모든 시프트(메인 + 모의안)\n• 모의안 메타데이터\n• 앱 설정 (테마, 시간 형식, 활성 plan 등)\n\n포함되지 않음: 되돌리기 스택 (사용자 액션 이력)';
+      '• 근무처 + 옵션\n• 모든 시프트(메인 + 가안)\n• 가안 메타데이터\n• 앱 설정 (테마, 시간 형식, 활성 plan 등)\n\n포함되지 않음: 되돌리기 스택 (사용자 액션 이력)';
 
   @override
   String get backupLastBackupNever => '백업한 적이 없어요';
@@ -817,7 +818,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reportViewPrefix => '보기:';
 
   @override
-  String get reportNoMockThisMonth => '— 이 달에 모의안이 없어요';
+  String get reportNoMockThisMonth => '이번 달에 가안이 없어요';
 
   @override
   String get reportTabAll => '전체';
@@ -826,11 +827,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reportAllJobsCombined => '모든 근무처 합산';
 
   @override
-  String get reportNoRecords => '이 달에 근무 기록이 없어요';
+  String get reportNoRecords => '이번 달에 근무 기록이 없어요';
 
   @override
   String reportNoRecordsJob(String job) {
-    return '$job — 이 달에 근무 기록이 없어요';
+    return '$job — 이번 달에 근무 기록이 없어요';
   }
 
   @override
@@ -894,7 +895,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reportItemFourInsuranceHint => '국민연금 + 건강 + 고용 + 장기요양';
 
   @override
-  String get reportGrossLabel => '총 지급 (gross)';
+  String get reportGrossLabel => '총 지급액';
 
   @override
   String get reportTotalDeductionLabel => '총 공제';
@@ -924,7 +925,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get reportFootnote =>
-      '* 일급 표시는 기본급+야간+일OT+휴일 가산만 합산되며, 주OT·주휴·공제는 월 단위로만 적용됩니다.';
+      '* 일급 표시는 기본급+야간+일 연장+휴일 가산만 합산되며, 주 연장·주휴·공제는 월 단위로만 적용돼요.';
 
   @override
   String reportCalcError(String error) {
