@@ -188,6 +188,8 @@ class BackupService {
           lastBackupAt: Value(data.appSettings.lastBackupAt),
           payrollConstantsJson: Value(data.appSettings.payrollConstantsJson),
           use24HourFormat: Value(data.appSettings.use24HourFormat),
+          // undo 스택은 백업에 포함하지 않음 — 사용자 액션 이력일 뿐
+          undoStackJson: const Value(null),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );

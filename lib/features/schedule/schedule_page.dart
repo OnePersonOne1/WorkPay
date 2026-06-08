@@ -66,7 +66,20 @@ class SchedulePage extends ConsumerWidget {
             label: const Text('급여 명세'),
             onPressed: () => pushMonthlyReportDetail(context),
           ),
-          const _OverflowMenu(),
+          // 되돌리기 — 스택 비었을 때 disabled
+          Consumer(builder: (ctx, r, _) {
+            final canUndo = r.watch(undoControllerProvider).isNotEmpty;
+            return TextButton.icon(
+              icon: const Icon(Icons.undo),
+              label: const Text('되돌리기'),
+              onPressed: canUndo ? () => _performUndo(context, r) : null,
+            );
+          }),
+          TextButton.icon(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            label: const Text('초기화'),
+            onPressed: () => _deleteMonthShifts(context, ref),
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -260,6 +273,55 @@ class _VisibilityToggles extends ConsumerWidget {
   }
 }
 
+/// 시프트 단건 삭제 시 2단계 확인.
+/// 첫 단계: "삭제할까요?" → 다음.
+/// 두 번째: "정말 진행합니까? 되돌리기로 되돌릴 수 있어요." → 삭제.
+Future<bool> confirmShiftDelete(BuildContext context) async {
+  final scheme = Theme.of(context).colorScheme;
+  final first = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('시프트 삭제'),
+      content: const Text('이 시프트를 삭제할까요?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton.tonal(
+          style: FilledButton.styleFrom(foregroundColor: scheme.error),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('계속'),
+        ),
+      ],
+    ),
+  );
+  if (first != true) return false;
+  if (!context.mounted) return false;
+  final second = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('정말 진행합니까?'),
+      content: const Text('되돌리기로 되돌릴 수 있어요.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: scheme.error,
+            foregroundColor: scheme.onError,
+          ),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('삭제'),
+        ),
+      ],
+    ),
+  );
+  return second == true;
+}
+
 Future<void> _performUndo(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final entry = await ref.read(undoControllerProvider.notifier).undo();
@@ -319,53 +381,6 @@ Future<void> _deleteMonthShifts(BuildContext context, WidgetRef ref) async {
   messenger.showSnackBar(
     SnackBar(content: Text('$count개 시프트 삭제됨')),
   );
-}
-
-class _OverflowMenu extends ConsumerWidget {
-  const _OverflowMenu();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final canUndo = ref.watch(undoControllerProvider).isNotEmpty;
-    final lastDesc = canUndo
-        ? ref.watch(undoControllerProvider).last.description
-        : null;
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      tooltip: '추가 작업',
-      onSelected: (v) {
-        switch (v) {
-          case 'undo':
-            _performUndo(context, ref);
-          case 'deleteMonth':
-            _deleteMonthShifts(context, ref);
-        }
-      },
-      itemBuilder: (ctx) => [
-        PopupMenuItem(
-          value: 'undo',
-          enabled: canUndo,
-          child: ListTile(
-            leading: const Icon(Icons.undo),
-            title: const Text('되돌리기 (Ctrl+Z)'),
-            subtitle: Text(
-              canUndo ? lastDesc! : '되돌릴 작업 없음',
-              style: const TextStyle(fontSize: 12),
-            ),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'deleteMonth',
-          child: ListTile(
-            leading: Icon(Icons.delete_sweep_outlined),
-            title: Text('이 달 시프트 전체 삭제'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1118,9 +1133,36 @@ class _ShiftList extends ConsumerWidget {
               if (s.memo != null) s.memo!,
             ].join(' · '),
           ),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: '시프트 삭제',
+            onPressed: () => _deleteSingleShift(context, ref, s),
+          ),
           onTap: () => showShiftEditSheet(context, shift: s),
         );
       },
+    );
+  }
+}
+
+/// _ShiftList에서 휴지통 탭 시 호출. 2단계 확인 → snapshot → delete.
+Future<void> _deleteSingleShift(
+  BuildContext context,
+  WidgetRef ref,
+  Shift s,
+) async {
+  final ok = await confirmShiftDelete(context);
+  if (!ok || !context.mounted) return;
+  final startLocal = s.startAt.toLocal();
+  await ref.read(undoControllerProvider.notifier).snapshotBefore(
+        year: startLocal.year,
+        month: startLocal.month,
+        description: '시프트 삭제',
+      );
+  await ref.read(shiftRepositoryProvider).delete(s.id);
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('시프트가 삭제됨')),
     );
   }
 }

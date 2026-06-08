@@ -16,6 +16,7 @@ class AppSettings {
     required this.lastBackupAt,
     required this.payrollConstantsJson,
     required this.use24HourFormat,
+    required this.undoStackJson,
     required this.updatedAt,
   });
 
@@ -30,6 +31,10 @@ class AppSettings {
 
   /// 시간 표시를 24시간 형식으로 할지. 기본 false (오전/오후).
   final bool use24HourFormat;
+
+  /// Undo 스택 직렬화. NULL이면 빈 스택. 앱 종료 후에도 유지.
+  final String? undoStackJson;
+
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -41,6 +46,8 @@ class AppSettings {
     String? payrollConstantsJson,
     bool clearPayrollConstantsJson = false,
     bool? use24HourFormat,
+    String? undoStackJson,
+    bool clearUndoStackJson = false,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -52,6 +59,9 @@ class AppSettings {
           ? null
           : (payrollConstantsJson ?? this.payrollConstantsJson),
       use24HourFormat: use24HourFormat ?? this.use24HourFormat,
+      undoStackJson: clearUndoStackJson
+          ? null
+          : (undoStackJson ?? this.undoStackJson),
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -65,16 +75,18 @@ class AppSettings {
       other.lastBackupAt == lastBackupAt &&
       other.payrollConstantsJson == payrollConstantsJson &&
       other.use24HourFormat == use24HourFormat &&
+      other.undoStackJson == undoStackJson &&
       other.updatedAt == updatedAt;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
         schemaVersion,
         themeMode,
         locale,
         lastBackupAt,
         payrollConstantsJson,
         use24HourFormat,
+        undoStackJson,
         updatedAt,
-      );
+      ]);
 }

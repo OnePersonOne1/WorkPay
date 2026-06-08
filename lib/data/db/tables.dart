@@ -65,6 +65,10 @@ class AppSettingsTable extends Table {
   /// 24시간 형식 표시 여부. 기본 true (24h). false면 오전/오후 표시.
   BoolColumn get use24HourFormat => boolean().withDefault(const Constant(true))();
 
+  /// Undo 스택 JSON. 시프트 변경 시 직전 월 시프트 list snapshot을 누적.
+  /// NULL이면 빈 스택. 최대 5개 entry.
+  TextColumn get undoStackJson => text().nullable()();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

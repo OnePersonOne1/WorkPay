@@ -1914,6 +1914,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _undoStackJsonMeta = const VerificationMeta(
+    'undoStackJson',
+  );
+  @override
+  late final GeneratedColumn<String> undoStackJson = GeneratedColumn<String>(
+    'undo_stack_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1934,6 +1945,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     lastBackupAt,
     payrollConstantsJson,
     use24HourFormat,
+    undoStackJson,
     updatedAt,
   ];
   @override
@@ -2001,6 +2013,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('undo_stack_json')) {
+      context.handle(
+        _undoStackJsonMeta,
+        undoStackJson.isAcceptableOrUnknown(
+          data['undo_stack_json']!,
+          _undoStackJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2046,6 +2067,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}use24_hour_format'],
       )!,
+      undoStackJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}undo_stack_json'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2074,6 +2099,10 @@ class AppSettingsTableData extends DataClass
 
   /// 24시간 형식 표시 여부. 기본 true (24h). false면 오전/오후 표시.
   final bool use24HourFormat;
+
+  /// Undo 스택 JSON. 시프트 변경 시 직전 월 시프트 list snapshot을 누적.
+  /// NULL이면 빈 스택. 최대 5개 entry.
+  final String? undoStackJson;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2083,6 +2112,7 @@ class AppSettingsTableData extends DataClass
     this.lastBackupAt,
     this.payrollConstantsJson,
     required this.use24HourFormat,
+    this.undoStackJson,
     required this.updatedAt,
   });
   @override
@@ -2099,6 +2129,9 @@ class AppSettingsTableData extends DataClass
       map['payroll_constants_json'] = Variable<String>(payrollConstantsJson);
     }
     map['use24_hour_format'] = Variable<bool>(use24HourFormat);
+    if (!nullToAbsent || undoStackJson != null) {
+      map['undo_stack_json'] = Variable<String>(undoStackJson);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2116,6 +2149,9 @@ class AppSettingsTableData extends DataClass
           ? const Value.absent()
           : Value(payrollConstantsJson),
       use24HourFormat: Value(use24HourFormat),
+      undoStackJson: undoStackJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(undoStackJson),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2135,6 +2171,7 @@ class AppSettingsTableData extends DataClass
         json['payrollConstantsJson'],
       ),
       use24HourFormat: serializer.fromJson<bool>(json['use24HourFormat']),
+      undoStackJson: serializer.fromJson<String?>(json['undoStackJson']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2149,6 +2186,7 @@ class AppSettingsTableData extends DataClass
       'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
       'payrollConstantsJson': serializer.toJson<String?>(payrollConstantsJson),
       'use24HourFormat': serializer.toJson<bool>(use24HourFormat),
+      'undoStackJson': serializer.toJson<String?>(undoStackJson),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2161,6 +2199,7 @@ class AppSettingsTableData extends DataClass
     Value<DateTime?> lastBackupAt = const Value.absent(),
     Value<String?> payrollConstantsJson = const Value.absent(),
     bool? use24HourFormat,
+    Value<String?> undoStackJson = const Value.absent(),
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2172,6 +2211,9 @@ class AppSettingsTableData extends DataClass
         ? payrollConstantsJson.value
         : this.payrollConstantsJson,
     use24HourFormat: use24HourFormat ?? this.use24HourFormat,
+    undoStackJson: undoStackJson.present
+        ? undoStackJson.value
+        : this.undoStackJson,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2191,6 +2233,9 @@ class AppSettingsTableData extends DataClass
       use24HourFormat: data.use24HourFormat.present
           ? data.use24HourFormat.value
           : this.use24HourFormat,
+      undoStackJson: data.undoStackJson.present
+          ? data.undoStackJson.value
+          : this.undoStackJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2205,6 +2250,7 @@ class AppSettingsTableData extends DataClass
           ..write('lastBackupAt: $lastBackupAt, ')
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('use24HourFormat: $use24HourFormat, ')
+          ..write('undoStackJson: $undoStackJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2219,6 +2265,7 @@ class AppSettingsTableData extends DataClass
     lastBackupAt,
     payrollConstantsJson,
     use24HourFormat,
+    undoStackJson,
     updatedAt,
   );
   @override
@@ -2232,6 +2279,7 @@ class AppSettingsTableData extends DataClass
           other.lastBackupAt == this.lastBackupAt &&
           other.payrollConstantsJson == this.payrollConstantsJson &&
           other.use24HourFormat == this.use24HourFormat &&
+          other.undoStackJson == this.undoStackJson &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2243,6 +2291,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<DateTime?> lastBackupAt;
   final Value<String?> payrollConstantsJson;
   final Value<bool> use24HourFormat;
+  final Value<String?> undoStackJson;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2252,6 +2301,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.lastBackupAt = const Value.absent(),
     this.payrollConstantsJson = const Value.absent(),
     this.use24HourFormat = const Value.absent(),
+    this.undoStackJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2262,6 +2312,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.lastBackupAt = const Value.absent(),
     this.payrollConstantsJson = const Value.absent(),
     this.use24HourFormat = const Value.absent(),
+    this.undoStackJson = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2273,6 +2324,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<DateTime>? lastBackupAt,
     Expression<String>? payrollConstantsJson,
     Expression<bool>? use24HourFormat,
+    Expression<String>? undoStackJson,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2284,6 +2336,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       if (payrollConstantsJson != null)
         'payroll_constants_json': payrollConstantsJson,
       if (use24HourFormat != null) 'use24_hour_format': use24HourFormat,
+      if (undoStackJson != null) 'undo_stack_json': undoStackJson,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2296,6 +2349,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<DateTime?>? lastBackupAt,
     Value<String?>? payrollConstantsJson,
     Value<bool>? use24HourFormat,
+    Value<String?>? undoStackJson,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2306,6 +2360,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       payrollConstantsJson: payrollConstantsJson ?? this.payrollConstantsJson,
       use24HourFormat: use24HourFormat ?? this.use24HourFormat,
+      undoStackJson: undoStackJson ?? this.undoStackJson,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2336,6 +2391,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     if (use24HourFormat.present) {
       map['use24_hour_format'] = Variable<bool>(use24HourFormat.value);
     }
+    if (undoStackJson.present) {
+      map['undo_stack_json'] = Variable<String>(undoStackJson.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2352,6 +2410,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('lastBackupAt: $lastBackupAt, ')
           ..write('payrollConstantsJson: $payrollConstantsJson, ')
           ..write('use24HourFormat: $use24HourFormat, ')
+          ..write('undoStackJson: $undoStackJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -3734,6 +3793,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<DateTime?> lastBackupAt,
       Value<String?> payrollConstantsJson,
       Value<bool> use24HourFormat,
+      Value<String?> undoStackJson,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -3745,6 +3805,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<DateTime?> lastBackupAt,
       Value<String?> payrollConstantsJson,
       Value<bool> use24HourFormat,
+      Value<String?> undoStackJson,
       Value<DateTime> updatedAt,
     });
 
@@ -3789,6 +3850,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get use24HourFormat => $composableBuilder(
     column: $table.use24HourFormat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get undoStackJson => $composableBuilder(
+    column: $table.undoStackJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3842,6 +3908,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get undoStackJson => $composableBuilder(
+    column: $table.undoStackJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3883,6 +3954,11 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<bool> get use24HourFormat => $composableBuilder(
     column: $table.use24HourFormat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get undoStackJson => $composableBuilder(
+    column: $table.undoStackJson,
     builder: (column) => column,
   );
 
@@ -3934,6 +4010,7 @@ class $$AppSettingsTableTableTableManager
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<String?> payrollConstantsJson = const Value.absent(),
                 Value<bool> use24HourFormat = const Value.absent(),
+                Value<String?> undoStackJson = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -3943,6 +4020,7 @@ class $$AppSettingsTableTableTableManager
                 lastBackupAt: lastBackupAt,
                 payrollConstantsJson: payrollConstantsJson,
                 use24HourFormat: use24HourFormat,
+                undoStackJson: undoStackJson,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -3954,6 +4032,7 @@ class $$AppSettingsTableTableTableManager
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<String?> payrollConstantsJson = const Value.absent(),
                 Value<bool> use24HourFormat = const Value.absent(),
+                Value<String?> undoStackJson = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -3963,6 +4042,7 @@ class $$AppSettingsTableTableTableManager
                 lastBackupAt: lastBackupAt,
                 payrollConstantsJson: payrollConstantsJson,
                 use24HourFormat: use24HourFormat,
+                undoStackJson: undoStackJson,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
