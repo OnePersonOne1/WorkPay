@@ -124,8 +124,8 @@ flutter_launcher_icons:
   image_path: "assets/icon/app_icon.png"
   android: true
   min_sdk_android: 21
-  # 적응형 아이콘: 배경은 인디고 단색, 전경은 투명 배경 버전.
-  adaptive_icon_background: "#3F51B5"
+  # 적응형 아이콘: 배경 흰색 단색, 전경은 투명(흰 배경 제거 + 안전영역 맞게 축소) 버전.
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   windows:
     generate: true
