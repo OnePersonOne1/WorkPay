@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'이번 달 근무 초기화'**
   String get scheduleResetMonth;
 
+  /// No description provided for @scheduleToolbarReset.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기화'**
+  String get scheduleToolbarReset;
+
   /// No description provided for @scheduleAddShift.
   ///
   /// In ko, this message translates to:

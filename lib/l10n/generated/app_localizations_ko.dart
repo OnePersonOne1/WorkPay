@@ -78,6 +78,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleResetMonth => '이번 달 근무 초기화';
 
   @override
+  String get scheduleToolbarReset => '초기화';
+
+  @override
   String get scheduleAddShift => '시프트 추가';
 
   @override

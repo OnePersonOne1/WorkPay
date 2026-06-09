@@ -26,6 +26,7 @@
   "scheduleAddRecurring": "Recurring",
   "scheduleViewPayroll": "Pay Slip",
   "scheduleResetMonth": "Clear This Month",
+  "scheduleToolbarReset": "Clear",
   "scheduleAddShift": "Add Shift",
   "scheduleBackToToday": "Back to Today",
   "scheduleYearMonthMove": "Pick Year / Month",

@@ -78,6 +78,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleResetMonth => 'Clear This Month';
 
   @override
+  String get scheduleToolbarReset => 'Clear';
+
+  @override
   String get scheduleAddShift => 'Add Shift';
 
   @override

@@ -29,12 +29,6 @@ class SchedulePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncJobs = ref.watch(activeJobsProvider);
-    final hasJobs = asyncJobs.maybeWhen(
-      data: (jobs) => jobs.isNotEmpty,
-      orElse: () => false,
-    );
-
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
@@ -51,82 +45,22 @@ class SchedulePage extends ConsumerWidget {
       },
       child: Focus(
         autofocus: true,
-        child: _scaffold(context, ref, hasJobs),
+        child: _scaffold(context, ref),
       ),
     );
   }
 
-  Widget _scaffold(
-    BuildContext context,
-    WidgetRef ref,
-    bool hasJobs,
-  ) {
+  Widget _scaffold(BuildContext context, WidgetRef ref) {
     // FAB는 _ShiftList 휴지통을 가려서 제거. "시프트 추가"는 _SelectedDayPanel 헤더에 inline.
+    // 되돌리기/다시하기/초기화/반복추가는 AppBar가 아닌 전용 툴바 행(_ActionToolbar)에 라벨과 함께.
     final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.scheduleTitle),
-        actions: [
-          // 되돌리기 / 다시 실행 — 아이콘만(좁은 화면 대응), 스택 비었을 때 disabled
-          Consumer(builder: (ctx, r, _) {
-            final lc = AppLocalizations.of(ctx);
-            final undoState = r.watch(undoControllerProvider);
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.undo),
-                  tooltip: lc.actionUndo,
-                  onPressed:
-                      undoState.canUndo ? () => _performUndo(context, r) : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.redo),
-                  tooltip: lc.actionRedo,
-                  onPressed:
-                      undoState.canRedo ? () => _performRedo(context, r) : null,
-                ),
-              ],
-            );
-          }),
-          // 덜 빈번한 동작은 오버플로 메뉴로 (안드로이드 폭 초과 방지)
-          PopupMenuButton<String>(
-            onSelected: (v) {
-              switch (v) {
-                case 'recurring':
-                  showRecurringShiftSheet(context);
-                case 'reset':
-                  _deleteMonthShifts(context, ref);
-              }
-            },
-            itemBuilder: (ctx) {
-              final lc = AppLocalizations.of(ctx);
-              return [
-                if (hasJobs)
-                  PopupMenuItem(
-                    value: 'recurring',
-                    child: ListTile(
-                      leading: const Icon(Icons.event_repeat),
-                      title: Text(lc.scheduleAddRecurring),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                PopupMenuItem(
-                  value: 'reset',
-                  child: ListTile(
-                    leading: const Icon(Icons.delete_sweep_outlined),
-                    title: Text(lc.scheduleResetMonth),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ];
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(l.scheduleTitle)),
       body: ListView(
         // 좁은 화면에서도 전체 콘텐츠를 스크롤로 볼 수 있게.
         children: const [
+          _ActionToolbar(),
+          Divider(height: 1),
           PlanSelectorBar(),
           _JobsBar(),
           _VisibilityToggles(),
@@ -138,6 +72,94 @@ class SchedulePage extends ConsumerWidget {
           Divider(height: 1),
           _SelectedDayPanel(),
         ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 상단 액션 툴바 — 되돌리기 / 다시하기 / 초기화 / 반복 추가
+// (아이콘 + 아래 라벨, 한 줄 4등분. 좁은 폰에서도 안 넘침)
+// ────────────────────────────────────────────────────────────
+
+class _ActionToolbar extends ConsumerWidget {
+  const _ActionToolbar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final undoState = ref.watch(undoControllerProvider);
+    final hasJobs = ref.watch(activeJobsProvider).maybeWhen(
+          data: (jobs) => jobs.isNotEmpty,
+          orElse: () => false,
+        );
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: Row(
+        children: [
+          _ToolbarButton(
+            icon: Icons.undo,
+            label: l.actionUndo,
+            onTap: undoState.canUndo ? () => _performUndo(context, ref) : null,
+          ),
+          _ToolbarButton(
+            icon: Icons.redo,
+            label: l.actionRedo,
+            onTap: undoState.canRedo ? () => _performRedo(context, ref) : null,
+          ),
+          _ToolbarButton(
+            icon: Icons.delete_sweep_outlined,
+            label: l.scheduleToolbarReset,
+            onTap: () => _deleteMonthShifts(context, ref),
+          ),
+          _ToolbarButton(
+            icon: Icons.event_repeat,
+            label: l.scheduleAddRecurring,
+            onTap: hasJobs ? () => showRecurringShiftSheet(context) : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolbarButton extends StatelessWidget {
+  const _ToolbarButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+    final color = enabled
+        ? scheme.onSurfaceVariant
+        : scheme.onSurface.withValues(alpha: 0.3);
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: color),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: color),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -767,12 +789,21 @@ class _DayCell extends StatelessWidget {
     if (shifts.length == 1) {
       final s = shifts[0];
       lines.add(
-        Text(
-          '${fmt(s.startAt.toLocal())}~${fmt(s.endAt.toLocal())}',
-          style: TextStyle(
-            color: fg.withValues(alpha: 0.85),
-            fontSize: 9,
-            height: 1.2,
+        SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${fmt(s.startAt.toLocal())}~${fmt(s.endAt.toLocal())}',
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                color: fg.withValues(alpha: 0.85),
+                fontSize: 9,
+                height: 1.2,
+              ),
+            ),
           ),
         ),
       );
@@ -790,12 +821,21 @@ class _DayCell extends StatelessWidget {
           ? workH.toInt().toString()
           : workH.toStringAsFixed(1);
       lines.add(
-        Text(
-          '${fmt(start)}~${fmt(end)} ${hStr}h',
-          style: TextStyle(
-            color: fg.withValues(alpha: 0.85),
-            fontSize: 9,
-            height: 1.2,
+        SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${fmt(start)}~${fmt(end)} ${hStr}h',
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                color: fg.withValues(alpha: 0.85),
+                fontSize: 9,
+                height: 1.2,
+              ),
+            ),
           ),
         ),
       );
@@ -1249,9 +1289,13 @@ Future<void> _deleteSingleShift(
   Shift s,
 ) async {
   final l = AppLocalizations.of(context);
+  // 삭제되는 시프트 타일의 context는 곧 dispose됨 → SnackBar 액션이 나중에 눌릴 때
+  // stale context로 undo가 실패한다. messenger·undo notifier를 미리 안정적으로 캡처.
+  final messenger = ScaffoldMessenger.of(context);
+  final undo = ref.read(undoControllerProvider.notifier);
   final startLocal = s.startAt.toLocal();
   final planId = ref.read(activePlanIdProvider);
-  await ref.read(undoControllerProvider.notifier).snapshotBefore(
+  await undo.snapshotBefore(
         year: startLocal.year,
         month: startLocal.month,
         planId: planId,
@@ -1261,15 +1305,23 @@ Future<void> _deleteSingleShift(
         ),
       );
   await ref.read(shiftRepositoryProvider).delete(s.id);
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l.scheduleSingleShiftDeleted),
-        action: SnackBarAction(
-          label: l.actionUndo,
-          onPressed: () => _performUndo(context, ref),
-        ),
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(l.scheduleSingleShiftDeleted),
+      action: SnackBarAction(
+        label: l.actionUndo,
+        onPressed: () async {
+          final entry = await undo.undo();
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(entry == null
+                  ? l.scheduleNothingToUndo
+                  : l.scheduleUndoneLabel(entry.description)),
+            ),
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
 }
