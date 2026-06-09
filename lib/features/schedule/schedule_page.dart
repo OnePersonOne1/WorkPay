@@ -458,6 +458,7 @@ class _MonthlyCalendar extends ConsumerWidget {
     final selected = ref.watch(selectedDateProvider);
     final asyncComp = ref.watch(monthlyComputationProvider);
     final vis = ref.watch(payrollVisibilityProvider);
+    final unit = ref.watch(currencyUnitProvider);
 
     final dailyMinutes = asyncComp.maybeWhen(
       data: (c) => c.dailyWorkMinutes,
@@ -489,6 +490,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         shifts: shiftsFor(day),
         isHoliday: isHolidayFor(day),
         showDailyPay: vis.daily,
+        currencyUnit: unit,
         use24Hour: use24,
         isToday: isToday,
         isSelected: isSelected,
@@ -574,6 +576,7 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.showDailyPay,
+    required this.currencyUnit,
     required this.jobColors,
     required this.isHoliday,
     required this.shifts,
@@ -590,6 +593,7 @@ class _DayCell extends StatelessWidget {
   final List<Shift> shifts;
   final bool isHoliday;
   final bool showDailyPay;
+  final String currencyUnit;
   final bool use24Hour;
   final bool isToday;
   final bool isSelected;
@@ -685,7 +689,7 @@ class _DayCell extends StatelessWidget {
                 ),
               if (showDailyPay && payWon != null && payWon! > 0)
                 Text(
-                  _fmtPayShort(payWon!),
+                  _fmtPayShort(payWon!, currencyUnit),
                   style: TextStyle(
                     color: fg.withValues(alpha: 0.9),
                     fontSize: 9,
@@ -761,13 +765,14 @@ class _DayCell extends StatelessWidget {
     return lines;
   }
 
-  static String _fmtPayShort(int won) {
-    if (won >= 10000) {
+  static String _fmtPayShort(int won, String unit) {
+    // '만' 단위 압축은 원화 전용. 다른 단위는 그대로 + 단위 접미.
+    if (unit == '원' && won >= 10000) {
       final man = won / 10000;
-      if (man == man.toInt()) return '${man.toInt()}만';
-      return '${man.toStringAsFixed(1)}만';
+      final s = man == man.toInt() ? '${man.toInt()}' : man.toStringAsFixed(1);
+      return '$s만$unit';
     }
-    return '$won';
+    return '$won$unit';
   }
 }
 
@@ -912,6 +917,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
     if (!vis.weekly) return const SizedBox.shrink();
 
     final l = AppLocalizations.of(context);
+    final unit = ref.watch(currencyUnitProvider);
     final asyncComp = ref.watch(monthlyComputationProvider);
     return asyncComp.maybeWhen(
       data: (c) {
@@ -964,7 +970,7 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
                       const Spacer(),
                       Text(
                         l.reportTotalAmount(
-                          f.format(c.weeklyPayWon[entries[i].key] ?? 0),
+                          '${f.format(c.weeklyPayWon[entries[i].key] ?? 0)}$unit',
                         ),
                         style: TextStyle(
                           color: scheme.onSurface,
@@ -1022,6 +1028,7 @@ class _MonthlySummary extends ConsumerWidget {
         final net = c.report.netPay;
         final gross = c.report.grossPay;
         final f = NumberFormat.decimalPattern(l.localeName);
+        final unit = ref.watch(currencyUnitProvider);
         return Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           child: InkWell(
@@ -1035,7 +1042,8 @@ class _MonthlySummary extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l.scheduleMonthSummary(_h(minutes), f.format(net.won)),
+                          l.scheduleMonthSummary(
+                              _h(minutes), '${f.format(net.won)}$unit'),
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
@@ -1043,7 +1051,7 @@ class _MonthlySummary extends ConsumerWidget {
                         ),
                         if (gross.won != net.won)
                           Text(
-                            l.scheduleGrossBefore(f.format(gross.won)),
+                            l.scheduleGrossBefore('${f.format(gross.won)}$unit'),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme

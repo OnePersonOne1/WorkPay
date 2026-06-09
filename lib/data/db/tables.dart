@@ -91,6 +91,10 @@ class AppSettingsTable extends Table {
   BoolColumn get koreanLaborLawCompliance =>
       boolean().withDefault(const Constant(true))();
 
+  /// 표시용 통화 단위. 기본 '원'. 계산엔 영향 없고 금액 뒤에 붙는 라벨일 뿐.
+  /// 사용자가 설정에서 자유 입력 (예: 원, $, USD).
+  TextColumn get currencyUnit => text().withDefault(const Constant('원'))();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

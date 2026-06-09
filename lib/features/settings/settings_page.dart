@@ -32,6 +32,7 @@ class SettingsPage extends ConsumerWidget {
             _SectionHeader(l.settingsSectionPayroll),
             _LaborLawTile(value: settings.koreanLaborLawCompliance),
             if (settings.koreanLaborLawCompliance) const _AdvancedTile(),
+            _CurrencyUnitTile(current: settings.currencyUnit),
             _SectionHeader(l.settingsSectionBackup),
             const _BackupTile(),
           ],
@@ -112,6 +113,80 @@ class _LocaleTile extends ConsumerWidget {
             ),
           );
         }
+      },
+    );
+  }
+}
+
+class _CurrencyUnitTile extends ConsumerWidget {
+  const _CurrencyUnitTile({required this.current});
+  final String current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final shown = current.isEmpty ? '원' : current;
+    return ListTile(
+      leading: const Icon(Icons.payments_outlined),
+      title: Text(l.settingsCurrencyUnit),
+      subtitle: Text('$shown · ${l.settingsCurrencyUnitHint}'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final controller = TextEditingController(text: shown);
+        final picked = await showDialog<String>(
+          context: context,
+          builder: (ctx) {
+            final lc = AppLocalizations.of(ctx);
+            return AlertDialog(
+              title: Text(lc.settingsCurrencyUnitDialogTitle),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    maxLength: 8,
+                    decoration: InputDecoration(
+                      hintText: lc.settingsCurrencyUnitFieldHint,
+                    ),
+                    onSubmitted: (v) => Navigator.of(ctx).pop(v),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    lc.settingsCurrencyUnitHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(lc.actionCancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(controller.text),
+                  child: Text(lc.actionSave),
+                ),
+              ],
+            );
+          },
+        );
+        if (picked == null) return;
+        // 빈 입력은 '원'으로 폴백.
+        final unit = picked.trim().isEmpty ? '원' : picked.trim();
+        if (unit == current) return;
+        final repo = ref.read(appSettingsRepositoryProvider);
+        final settings = await repo.read();
+        await repo.update(
+          settings.copyWith(
+            currencyUnit: unit,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
       },
     );
   }

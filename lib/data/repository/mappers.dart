@@ -67,6 +67,7 @@ extension AppSettingsRowToEntity on db.AppSettingsTableData {
         undoStackJson: undoStackJson,
         activePlanId: activePlanId,
         koreanLaborLawCompliance: koreanLaborLawCompliance,
+        currencyUnit: currencyUnit,
         updatedAt: updatedAt,
       );
 }
@@ -83,6 +84,7 @@ extension AppSettingsEntityToCompanion on ent.AppSettings {
         undoStackJson: Value(undoStackJson),
         activePlanId: Value(activePlanId),
         koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
+        currencyUnit: Value(currencyUnit),
         updatedAt: Value(updatedAt),
       );
 }

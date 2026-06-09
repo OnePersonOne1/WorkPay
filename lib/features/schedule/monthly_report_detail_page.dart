@@ -7,6 +7,7 @@ import '../../core/money/money.dart';
 import '../../core/palette/job_colors.dart';
 import '../../domain/payroll/monthly_computation.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../settings/settings_providers.dart';
 import 'monthly_report_bundle.dart';
 import 'payroll_providers.dart';
 import 'plan_providers.dart';
@@ -167,14 +168,15 @@ class _DetailScaffold extends ConsumerWidget {
   }
 }
 
-class _BreakdownView extends StatelessWidget {
+class _BreakdownView extends ConsumerWidget {
   const _BreakdownView({required this.computation, this.jobLabel});
   final MonthlyComputation computation;
   final String? jobLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final unit = ref.watch(currencyUnitProvider);
     final r = computation.report;
     final f = NumberFormat.decimalPattern(l.localeName);
     if (r.totalWorkMinutes == 0) {
@@ -219,7 +221,7 @@ class _BreakdownView extends StatelessWidget {
         for (final item in premiums) _ItemRow(item: item),
         const Divider(height: 32),
         _RowKV(label: l.reportGrossLabel,
-            value: l.reportTotalAmount(f.format(r.grossPay.won)),
+            value: l.reportTotalAmount('${f.format(r.grossPay.won)}$unit'),
             emphasize: true),
         if (r.totalDeduction.won > 0) ...[
           const SizedBox(height: 16),
@@ -229,7 +231,8 @@ class _BreakdownView extends StatelessWidget {
           const Divider(height: 32),
           _RowKV(
               label: l.reportTotalDeductionLabel,
-              value: l.reportNegativeAmount(f.format(r.totalDeduction.won)),
+              value:
+                  l.reportNegativeAmount('${f.format(r.totalDeduction.won)}$unit'),
               emphasize: true),
         ],
         const SizedBox(height: 24),
@@ -250,7 +253,7 @@ class _BreakdownView extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                l.reportTotalAmount(f.format(r.netPay.won)),
+                l.reportTotalAmount('${f.format(r.netPay.won)}$unit'),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.w800,
@@ -279,13 +282,14 @@ class _Item {
   final Money amount;
 }
 
-class _ItemRow extends StatelessWidget {
+class _ItemRow extends ConsumerWidget {
   const _ItemRow({required this.item});
   final _Item item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final unit = ref.watch(currencyUnitProvider);
     final scheme = Theme.of(context).colorScheme;
     final f = NumberFormat.decimalPattern(l.localeName);
     final isZero = item.amount.won == 0;
@@ -317,7 +321,7 @@ class _ItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            l.reportTotalAmount(f.format(item.amount.won)),
+            l.reportTotalAmount('${f.format(item.amount.won)}$unit'),
             style: TextStyle(
               color: isZero ? scheme.onSurfaceVariant : null,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -383,7 +387,7 @@ class _RowKV extends StatelessWidget {
   }
 }
 
-class _NetCard extends StatelessWidget {
+class _NetCard extends ConsumerWidget {
   const _NetCard({
     required this.net,
     required this.gross,
@@ -394,8 +398,9 @@ class _NetCard extends StatelessWidget {
   final int totalMinutes;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final unit = ref.watch(currencyUnitProvider);
     final f = NumberFormat.decimalPattern(l.localeName);
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
@@ -418,7 +423,7 @@ class _NetCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            l.reportTotalAmount(f.format(net.won)),
+            l.reportTotalAmount('${f.format(net.won)}$unit'),
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -426,7 +431,7 @@ class _NetCard extends StatelessWidget {
           ),
           if (gross.won != net.won)
             Text(
-              l.scheduleGrossBefore(f.format(gross.won)),
+              l.scheduleGrossBefore('${f.format(gross.won)}$unit'),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 12,

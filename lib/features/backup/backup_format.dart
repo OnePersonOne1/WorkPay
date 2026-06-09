@@ -278,6 +278,7 @@ class AppSettingsJson {
     required this.updatedAt,
     this.activePlanId = 0,
     this.koreanLaborLawCompliance = true,
+    this.currencyUnit = '원',
   });
 
   final int schemaVersion;
@@ -289,6 +290,7 @@ class AppSettingsJson {
   final DateTime updatedAt;
   final int activePlanId;
   final bool koreanLaborLawCompliance;
+  final String currencyUnit;
 
   Map<String, dynamic> toJson() => {
         'schemaVersion': schemaVersion,
@@ -302,6 +304,7 @@ class AppSettingsJson {
         'updatedAt': updatedAt.toUtc().toIso8601String(),
         'activePlanId': activePlanId,
         'koreanLaborLawCompliance': koreanLaborLawCompliance,
+        'currencyUnit': currencyUnit,
       };
 
   factory AppSettingsJson.fromJson(Map<String, dynamic> json) =>
@@ -319,5 +322,6 @@ class AppSettingsJson {
         activePlanId: json['activePlanId'] as int? ?? 0,
         koreanLaborLawCompliance:
             json['koreanLaborLawCompliance'] as bool? ?? true,
+        currencyUnit: json['currencyUnit'] as String? ?? '원',
       );
 }

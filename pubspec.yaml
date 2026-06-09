@@ -59,6 +59,7 @@ dev_dependencies:
   drift_dev: ^2.33.0
   build_runner: ^2.15.0
   msix: ^3.16.13
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -115,4 +116,20 @@ msix_config:
   msix_version: 1.0.0.0
   publisher: CN=OnePersonOne1
   capabilities: ""
+  # 아이콘 생성 후 주석 해제 (assets/icon/app_icon.png 존재해야 함):
   # logo_path: assets/icon/app_icon.png
+
+# 앱 아이콘 일괄 생성 (dart run flutter_launcher_icons).
+# 마스터 1024x1024 PNG를 assets/icon/app_icon.png에 두고 실행한다.
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  min_sdk_android: 21
+  # 적응형 아이콘: 배경은 인디고 단색, 전경은 마스터(여백 포함 권장).
+  # 투명 배경 전경 버전이 있으면 app_icon_foreground.png로 교체하면 품질↑.
+  adaptive_icon_background: "#3F51B5"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256

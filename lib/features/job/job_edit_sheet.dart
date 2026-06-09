@@ -249,6 +249,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final laborLawOn = ref.watch(koreanLaborLawComplianceProvider);
+    final unit = ref.watch(currencyUnitProvider);
     final isEdit = widget.initial != null;
     if (_loadingOptions) {
       return const SizedBox(
@@ -292,7 +293,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
             TextFormField(
               controller: _wageCtrl,
               decoration: InputDecoration(
-                labelText: l.jobSheetWage,
+                labelText: l.jobSheetWage(unit),
                 border: const OutlineInputBorder(),
               ),
               keyboardType:

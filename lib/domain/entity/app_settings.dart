@@ -14,6 +14,7 @@ class AppSettings {
     required this.undoStackJson,
     required this.activePlanId,
     required this.koreanLaborLawCompliance,
+    required this.currencyUnit,
     required this.updatedAt,
   });
 
@@ -39,6 +40,9 @@ class AppSettings {
   /// OFF면 단순 시급×시간만, 고급 옵션 UI 숨김.
   final bool koreanLaborLawCompliance;
 
+  /// 표시용 통화 단위 (예: '원', '$', 'USD'). 계산엔 영향 없음. 기본 '원'.
+  final String currencyUnit;
+
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -54,6 +58,7 @@ class AppSettings {
     bool clearUndoStackJson = false,
     int? activePlanId,
     bool? koreanLaborLawCompliance,
+    String? currencyUnit,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -71,6 +76,7 @@ class AppSettings {
       activePlanId: activePlanId ?? this.activePlanId,
       koreanLaborLawCompliance:
           koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
+      currencyUnit: currencyUnit ?? this.currencyUnit,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -87,6 +93,7 @@ class AppSettings {
       other.undoStackJson == undoStackJson &&
       other.activePlanId == activePlanId &&
       other.koreanLaborLawCompliance == koreanLaborLawCompliance &&
+      other.currencyUnit == currencyUnit &&
       other.updatedAt == updatedAt;
 
   @override
@@ -100,6 +107,7 @@ class AppSettings {
         undoStackJson,
         activePlanId,
         koreanLaborLawCompliance,
+        currencyUnit,
         updatedAt,
       ]);
 }

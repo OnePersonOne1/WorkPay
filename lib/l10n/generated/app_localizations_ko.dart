@@ -138,12 +138,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String scheduleMonthSummary(String hours, String amount) {
-    return '이번 달 ${hours}h · $amount원';
+    return '이번 달 ${hours}h · $amount';
   }
 
   @override
   String scheduleGrossBefore(String amount) {
-    return '공제 전 $amount원';
+    return '공제 전 $amount';
   }
 
   @override
@@ -528,7 +528,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String jobsWageLabel(String wage) {
-    return '$wage원/시';
+    return '$wage/시';
   }
 
   @override
@@ -547,7 +547,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get jobSheetNameHint => '예) 카페 알바, 편의점 등';
 
   @override
-  String get jobSheetWage => '시급 (원)';
+  String jobSheetWage(String unit) {
+    return '시급 ($unit)';
+  }
 
   @override
   String get jobSheetIncomeType => '소득 유형';
@@ -655,6 +657,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsSectionPayroll => '급여 계산';
+
+  @override
+  String get settingsCurrencyUnit => '통화 단위';
+
+  @override
+  String get settingsCurrencyUnitHint =>
+      '금액 뒤에 표시되는 라벨이에요. 계산에는 영향을 주지 않아요. (예: 원, \$, USD)';
+
+  @override
+  String get settingsCurrencyUnitDialogTitle => '통화 단위';
+
+  @override
+  String get settingsCurrencyUnitFieldHint => '예) 원, \$, USD';
 
   @override
   String get settingsLaborLaw => '한국 노동법 준수 모드';
@@ -905,12 +920,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String reportTotalAmount(String amount) {
-    return '$amount원';
+    return '$amount';
   }
 
   @override
   String reportNegativeAmount(String amount) {
-    return '-$amount원';
+    return '-$amount';
   }
 
   @override

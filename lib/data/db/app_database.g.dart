@@ -1998,6 +1998,18 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
         defaultValue: const Constant(true),
       );
+  static const VerificationMeta _currencyUnitMeta = const VerificationMeta(
+    'currencyUnit',
+  );
+  @override
+  late final GeneratedColumn<String> currencyUnit = GeneratedColumn<String>(
+    'currency_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('원'),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -2021,6 +2033,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     undoStackJson,
     activePlanId,
     koreanLaborLawCompliance,
+    currencyUnit,
     updatedAt,
   ];
   @override
@@ -2115,6 +2128,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('currency_unit')) {
+      context.handle(
+        _currencyUnitMeta,
+        currencyUnit.isAcceptableOrUnknown(
+          data['currency_unit']!,
+          _currencyUnitMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2172,6 +2194,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}korean_labor_law_compliance'],
       )!,
+      currencyUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_unit'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2212,6 +2238,10 @@ class AppSettingsTableData extends DataClass
   /// Job별 옵션이 실제 계산에 반영. 비활성화 시 단순 시급×시간만, 고급 옵션 UI 숨김.
   /// 기본값 true (한국어 locale 가정). 영어 locale 신규 설치 시 onCreate에서 false로 세팅 가능.
   final bool koreanLaborLawCompliance;
+
+  /// 표시용 통화 단위. 기본 '원'. 계산엔 영향 없고 금액 뒤에 붙는 라벨일 뿐.
+  /// 사용자가 설정에서 자유 입력 (예: 원, $, USD).
+  final String currencyUnit;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2224,6 +2254,7 @@ class AppSettingsTableData extends DataClass
     this.undoStackJson,
     required this.activePlanId,
     required this.koreanLaborLawCompliance,
+    required this.currencyUnit,
     required this.updatedAt,
   });
   @override
@@ -2247,6 +2278,7 @@ class AppSettingsTableData extends DataClass
     map['korean_labor_law_compliance'] = Variable<bool>(
       koreanLaborLawCompliance,
     );
+    map['currency_unit'] = Variable<String>(currencyUnit);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2269,6 +2301,7 @@ class AppSettingsTableData extends DataClass
           : Value(undoStackJson),
       activePlanId: Value(activePlanId),
       koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
+      currencyUnit: Value(currencyUnit),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2293,6 +2326,7 @@ class AppSettingsTableData extends DataClass
       koreanLaborLawCompliance: serializer.fromJson<bool>(
         json['koreanLaborLawCompliance'],
       ),
+      currencyUnit: serializer.fromJson<String>(json['currencyUnit']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2312,6 +2346,7 @@ class AppSettingsTableData extends DataClass
       'koreanLaborLawCompliance': serializer.toJson<bool>(
         koreanLaborLawCompliance,
       ),
+      'currencyUnit': serializer.toJson<String>(currencyUnit),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2327,6 +2362,7 @@ class AppSettingsTableData extends DataClass
     Value<String?> undoStackJson = const Value.absent(),
     int? activePlanId,
     bool? koreanLaborLawCompliance,
+    String? currencyUnit,
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2344,6 +2380,7 @@ class AppSettingsTableData extends DataClass
     activePlanId: activePlanId ?? this.activePlanId,
     koreanLaborLawCompliance:
         koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
+    currencyUnit: currencyUnit ?? this.currencyUnit,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2372,6 +2409,9 @@ class AppSettingsTableData extends DataClass
       koreanLaborLawCompliance: data.koreanLaborLawCompliance.present
           ? data.koreanLaborLawCompliance.value
           : this.koreanLaborLawCompliance,
+      currencyUnit: data.currencyUnit.present
+          ? data.currencyUnit.value
+          : this.currencyUnit,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2389,6 +2429,7 @@ class AppSettingsTableData extends DataClass
           ..write('undoStackJson: $undoStackJson, ')
           ..write('activePlanId: $activePlanId, ')
           ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
+          ..write('currencyUnit: $currencyUnit, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2406,6 +2447,7 @@ class AppSettingsTableData extends DataClass
     undoStackJson,
     activePlanId,
     koreanLaborLawCompliance,
+    currencyUnit,
     updatedAt,
   );
   @override
@@ -2422,6 +2464,7 @@ class AppSettingsTableData extends DataClass
           other.undoStackJson == this.undoStackJson &&
           other.activePlanId == this.activePlanId &&
           other.koreanLaborLawCompliance == this.koreanLaborLawCompliance &&
+          other.currencyUnit == this.currencyUnit &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2436,6 +2479,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<String?> undoStackJson;
   final Value<int> activePlanId;
   final Value<bool> koreanLaborLawCompliance;
+  final Value<String> currencyUnit;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2448,6 +2492,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.undoStackJson = const Value.absent(),
     this.activePlanId = const Value.absent(),
     this.koreanLaborLawCompliance = const Value.absent(),
+    this.currencyUnit = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2461,6 +2506,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.undoStackJson = const Value.absent(),
     this.activePlanId = const Value.absent(),
     this.koreanLaborLawCompliance = const Value.absent(),
+    this.currencyUnit = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2475,6 +2521,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<String>? undoStackJson,
     Expression<int>? activePlanId,
     Expression<bool>? koreanLaborLawCompliance,
+    Expression<String>? currencyUnit,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2490,6 +2537,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       if (activePlanId != null) 'active_plan_id': activePlanId,
       if (koreanLaborLawCompliance != null)
         'korean_labor_law_compliance': koreanLaborLawCompliance,
+      if (currencyUnit != null) 'currency_unit': currencyUnit,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2505,6 +2553,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<String?>? undoStackJson,
     Value<int>? activePlanId,
     Value<bool>? koreanLaborLawCompliance,
+    Value<String>? currencyUnit,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2519,6 +2568,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       activePlanId: activePlanId ?? this.activePlanId,
       koreanLaborLawCompliance:
           koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
+      currencyUnit: currencyUnit ?? this.currencyUnit,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2560,6 +2610,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
         koreanLaborLawCompliance.value,
       );
     }
+    if (currencyUnit.present) {
+      map['currency_unit'] = Variable<String>(currencyUnit.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2579,6 +2632,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('undoStackJson: $undoStackJson, ')
           ..write('activePlanId: $activePlanId, ')
           ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
+          ..write('currencyUnit: $currencyUnit, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -4382,6 +4436,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> undoStackJson,
       Value<int> activePlanId,
       Value<bool> koreanLaborLawCompliance,
+      Value<String> currencyUnit,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -4396,6 +4451,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> undoStackJson,
       Value<int> activePlanId,
       Value<bool> koreanLaborLawCompliance,
+      Value<String> currencyUnit,
       Value<DateTime> updatedAt,
     });
 
@@ -4455,6 +4511,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get koreanLaborLawCompliance => $composableBuilder(
     column: $table.koreanLaborLawCompliance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyUnit => $composableBuilder(
+    column: $table.currencyUnit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4523,6 +4584,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get currencyUnit => $composableBuilder(
+    column: $table.currencyUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -4582,6 +4648,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get currencyUnit => $composableBuilder(
+    column: $table.currencyUnit,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
@@ -4633,6 +4704,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> undoStackJson = const Value.absent(),
                 Value<int> activePlanId = const Value.absent(),
                 Value<bool> koreanLaborLawCompliance = const Value.absent(),
+                Value<String> currencyUnit = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -4645,6 +4717,7 @@ class $$AppSettingsTableTableTableManager
                 undoStackJson: undoStackJson,
                 activePlanId: activePlanId,
                 koreanLaborLawCompliance: koreanLaborLawCompliance,
+                currencyUnit: currencyUnit,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -4659,6 +4732,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> undoStackJson = const Value.absent(),
                 Value<int> activePlanId = const Value.absent(),
                 Value<bool> koreanLaborLawCompliance = const Value.absent(),
+                Value<String> currencyUnit = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -4671,6 +4745,7 @@ class $$AppSettingsTableTableTableManager
                 undoStackJson: undoStackJson,
                 activePlanId: activePlanId,
                 koreanLaborLawCompliance: koreanLaborLawCompliance,
+                currencyUnit: currencyUnit,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

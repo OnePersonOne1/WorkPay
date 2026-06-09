@@ -7,6 +7,7 @@ import '../../core/palette/job_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../settings/settings_providers.dart';
 import 'job_edit_sheet.dart';
 import 'job_providers.dart';
 
@@ -102,7 +103,9 @@ class _JobTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final wageFmt = NumberFormat.decimalPattern(l.localeName).format(job.hourlyWage);
+    final unit = ref.watch(currencyUnitProvider);
+    final wageFmt =
+        NumberFormat.decimalPattern(l.localeName).format(job.hourlyWage);
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: JobColors.fromArgb(job.colorArgb),
@@ -117,7 +120,7 @@ class _JobTile extends ConsumerWidget {
               : null,
         ),
       ),
-      subtitle: Text(l.jobsWageLabel(wageFmt)),
+      subtitle: Text(l.jobsWageLabel('$wageFmt$unit')),
       trailing: PopupMenuButton<_JobMenuAction>(
         onSelected: (action) => _handleMenu(context, ref, action),
         itemBuilder: (ctx) {

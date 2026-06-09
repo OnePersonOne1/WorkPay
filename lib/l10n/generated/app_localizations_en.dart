@@ -550,7 +550,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jobSheetNameHint => 'e.g. Cafe, Convenience Store';
 
   @override
-  String get jobSheetWage => 'Hourly Wage';
+  String jobSheetWage(String unit) {
+    return 'Hourly Wage ($unit)';
+  }
 
   @override
   String get jobSheetIncomeType => 'Income Type';
@@ -658,6 +660,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSectionPayroll => 'Payroll Calculation';
+
+  @override
+  String get settingsCurrencyUnit => 'Currency unit';
+
+  @override
+  String get settingsCurrencyUnitHint =>
+      'A label shown after amounts. It does not affect any calculation. (e.g. 원, \$, USD)';
+
+  @override
+  String get settingsCurrencyUnitDialogTitle => 'Currency unit';
+
+  @override
+  String get settingsCurrencyUnitFieldHint => 'e.g. 원, \$, USD';
 
   @override
   String get settingsLaborLaw => 'Korean labor law compliance';

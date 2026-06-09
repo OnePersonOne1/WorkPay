@@ -347,13 +347,13 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleMonthSummary.
   ///
   /// In ko, this message translates to:
-  /// **'이번 달 {hours}h · {amount}원'**
+  /// **'이번 달 {hours}h · {amount}'**
   String scheduleMonthSummary(String hours, String amount);
 
   /// No description provided for @scheduleGrossBefore.
   ///
   /// In ko, this message translates to:
-  /// **'공제 전 {amount}원'**
+  /// **'공제 전 {amount}'**
   String scheduleGrossBefore(String amount);
 
   /// No description provided for @scheduleMonthCalcError.
@@ -965,7 +965,7 @@ abstract class AppLocalizations {
   /// No description provided for @jobsWageLabel.
   ///
   /// In ko, this message translates to:
-  /// **'{wage}원/시'**
+  /// **'{wage}/시'**
   String jobsWageLabel(String wage);
 
   /// No description provided for @jobsAdvancedOptions.
@@ -1001,8 +1001,8 @@ abstract class AppLocalizations {
   /// No description provided for @jobSheetWage.
   ///
   /// In ko, this message translates to:
-  /// **'시급 (원)'**
-  String get jobSheetWage;
+  /// **'시급 ({unit})'**
+  String jobSheetWage(String unit);
 
   /// No description provided for @jobSheetIncomeType.
   ///
@@ -1213,6 +1213,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'급여 계산'**
   String get settingsSectionPayroll;
+
+  /// No description provided for @settingsCurrencyUnit.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화 단위'**
+  String get settingsCurrencyUnit;
+
+  /// No description provided for @settingsCurrencyUnitHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'금액 뒤에 표시되는 라벨이에요. 계산에는 영향을 주지 않아요. (예: 원, \$, USD)'**
+  String get settingsCurrencyUnitHint;
+
+  /// No description provided for @settingsCurrencyUnitDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화 단위'**
+  String get settingsCurrencyUnitDialogTitle;
+
+  /// No description provided for @settingsCurrencyUnitFieldHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예) 원, \$, USD'**
+  String get settingsCurrencyUnitFieldHint;
 
   /// No description provided for @settingsLaborLaw.
   ///
@@ -1673,13 +1697,13 @@ abstract class AppLocalizations {
   /// No description provided for @reportTotalAmount.
   ///
   /// In ko, this message translates to:
-  /// **'{amount}원'**
+  /// **'{amount}'**
   String reportTotalAmount(String amount);
 
   /// No description provided for @reportNegativeAmount.
   ///
   /// In ko, this message translates to:
-  /// **'-{amount}원'**
+  /// **'-{amount}'**
   String reportNegativeAmount(String amount);
 
   /// No description provided for @reportWorkTimeLabel.

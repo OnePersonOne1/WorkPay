@@ -9,7 +9,7 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-const int kCurrentSchemaVersion = 6;
+const int kCurrentSchemaVersion = 7;
 
 @DriftDatabase(
   tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable, Plans],
@@ -60,6 +60,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettingsTable,
               appSettingsTable.koreanLaborLawCompliance,
+            );
+          }
+          if (from < 7) {
+            // v7: app_settings에 currencyUnit 컬럼 추가 (표시용 통화 단위, 기본 '원')
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.currencyUnit,
             );
           }
         },

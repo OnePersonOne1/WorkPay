@@ -30,6 +30,16 @@ final use24HourFormatProvider = Provider<bool>((ref) {
   return async.maybeWhen(data: (s) => s.use24HourFormat, orElse: () => false);
 });
 
+/// 표시용 통화 단위 (금액 뒤에 붙는 라벨). 계산엔 영향 없음. 기본 '원'.
+/// 빈 값이면 '원'으로 폴백.
+final currencyUnitProvider = Provider<String>((ref) {
+  final async = ref.watch(appSettingsProvider);
+  return async.maybeWhen(
+    data: (s) => s.currencyUnit.isEmpty ? '원' : s.currencyUnit,
+    orElse: () => '원',
+  );
+});
+
 /// MaterialApp에 전달할 locale. AppSettings.locale 기반.
 /// 빈 문자열('')이면 null을 반환 → MaterialApp이 기기 시스템 로케일을 따른다.
 final localeProvider = Provider<Locale?>((ref) {
