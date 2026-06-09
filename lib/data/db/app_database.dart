@@ -9,7 +9,7 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-const int kCurrentSchemaVersion = 7;
+const int kCurrentSchemaVersion = 8;
 
 @DriftDatabase(
   tables: [Jobs, JobPayrollOptionsTable, Shifts, AppSettingsTable, Plans],
@@ -67,6 +67,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettingsTable,
               appSettingsTable.currencyUnit,
+            );
+          }
+          if (from < 8) {
+            // v8: app_settings에 holidayCountry 컬럼 추가 (공휴일 기준 국가, 기본 'KR')
+            await m.addColumn(
+              appSettingsTable,
+              appSettingsTable.holidayCountry,
             );
           }
         },

@@ -678,8 +678,11 @@ class _DayCell extends StatelessWidget {
       );
     }
 
-    // 셀 배경: 선택 시만 채움. 오늘은 날짜 숫자에만 작은 배지 (보편적 달력 스타일).
-    final Color? bg = isSelected ? scheme.primary : null;
+    // 셀 배경: 선택 시 진하게, 근무 있는 날은 옅게(선택색보다 얕게), 그 외 없음.
+    final bool hasShifts = shifts.isNotEmpty;
+    final Color? bg = isSelected
+        ? scheme.primary
+        : (hasShifts ? scheme.primary.withValues(alpha: 0.08) : null);
 
     // 텍스트 색 — 선택 셀은 onPrimary, 외엔 토/일/공휴일 색 또는 onSurface
     final Color fg;

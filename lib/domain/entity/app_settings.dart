@@ -15,6 +15,7 @@ class AppSettings {
     required this.activePlanId,
     required this.koreanLaborLawCompliance,
     required this.currencyUnit,
+    required this.holidayCountry,
     required this.updatedAt,
   });
 
@@ -43,6 +44,9 @@ class AppSettings {
   /// 표시용 통화 단위 (예: '원', '$', 'USD'). 계산엔 영향 없음. 기본 '원'.
   final String currencyUnit;
 
+  /// 공휴일 기준 국가. 'KR'=대한민국(기본), 'none'=표시 안 함.
+  final String holidayCountry;
+
   final DateTime updatedAt;
 
   AppSettings copyWith({
@@ -59,6 +63,7 @@ class AppSettings {
     int? activePlanId,
     bool? koreanLaborLawCompliance,
     String? currencyUnit,
+    String? holidayCountry,
     DateTime? updatedAt,
   }) {
     return AppSettings(
@@ -77,6 +82,7 @@ class AppSettings {
       koreanLaborLawCompliance:
           koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
       currencyUnit: currencyUnit ?? this.currencyUnit,
+      holidayCountry: holidayCountry ?? this.holidayCountry,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -94,6 +100,7 @@ class AppSettings {
       other.activePlanId == activePlanId &&
       other.koreanLaborLawCompliance == koreanLaborLawCompliance &&
       other.currencyUnit == currencyUnit &&
+      other.holidayCountry == holidayCountry &&
       other.updatedAt == updatedAt;
 
   @override
@@ -108,6 +115,7 @@ class AppSettings {
         activePlanId,
         koreanLaborLawCompliance,
         currencyUnit,
+        holidayCountry,
         updatedAt,
       ]);
 }

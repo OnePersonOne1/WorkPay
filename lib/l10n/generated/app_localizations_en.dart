@@ -264,6 +264,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shiftSheetBreak => 'Break';
 
   @override
+  String get shiftSheetBreakUnit => 'min';
+
+  @override
   String get shiftSheetMemo => 'Note (optional)';
 
   @override
@@ -691,6 +694,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCurrencyUnitFieldHint => 'e.g. 원, \$, USD';
+
+  @override
+  String get settingsHolidayCountry => 'Public holidays';
+
+  @override
+  String get settingsHolidayCountryHint =>
+      'Used for holiday coloring and holiday-work premium.';
+
+  @override
+  String get settingsHolidayCountryKR => 'South Korea';
+
+  @override
+  String get settingsHolidayCountryNone => 'None';
 
   @override
   String get settingsLaborLaw => 'Korean labor law compliance';

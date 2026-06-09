@@ -264,6 +264,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shiftSheetBreak => '휴게';
 
   @override
+  String get shiftSheetBreakUnit => '단위: 분';
+
+  @override
   String get shiftSheetMemo => '메모 (선택)';
 
   @override
@@ -688,6 +691,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsCurrencyUnitFieldHint => '예) 원, \$, USD';
+
+  @override
+  String get settingsHolidayCountry => '공휴일 기준 국가';
+
+  @override
+  String get settingsHolidayCountryHint => '공휴일 색 표시와 휴일근로 가산 계산에 사용해요.';
+
+  @override
+  String get settingsHolidayCountryKR => '대한민국';
+
+  @override
+  String get settingsHolidayCountryNone => '표시 안 함';
 
   @override
   String get settingsLaborLaw => '한국 노동법 준수 모드';

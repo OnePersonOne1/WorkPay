@@ -2010,6 +2010,18 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('원'),
   );
+  static const VerificationMeta _holidayCountryMeta = const VerificationMeta(
+    'holidayCountry',
+  );
+  @override
+  late final GeneratedColumn<String> holidayCountry = GeneratedColumn<String>(
+    'holiday_country',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('KR'),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -2034,6 +2046,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     activePlanId,
     koreanLaborLawCompliance,
     currencyUnit,
+    holidayCountry,
     updatedAt,
   ];
   @override
@@ -2137,6 +2150,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('holiday_country')) {
+      context.handle(
+        _holidayCountryMeta,
+        holidayCountry.isAcceptableOrUnknown(
+          data['holiday_country']!,
+          _holidayCountryMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2198,6 +2220,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}currency_unit'],
       )!,
+      holidayCountry: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}holiday_country'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2242,6 +2268,10 @@ class AppSettingsTableData extends DataClass
   /// 표시용 통화 단위. 기본 '원'. 계산엔 영향 없고 금액 뒤에 붙는 라벨일 뿐.
   /// 사용자가 설정에서 자유 입력 (예: 원, $, USD).
   final String currencyUnit;
+
+  /// 공휴일 기준 국가. 'KR'=대한민국(기본), 'none'=표시 안 함. 추후 'US' 등 확장.
+  /// 공휴일 색칠 + 휴일근로 가산 판정에 사용.
+  final String holidayCountry;
   final DateTime updatedAt;
   const AppSettingsTableData({
     required this.id,
@@ -2255,6 +2285,7 @@ class AppSettingsTableData extends DataClass
     required this.activePlanId,
     required this.koreanLaborLawCompliance,
     required this.currencyUnit,
+    required this.holidayCountry,
     required this.updatedAt,
   });
   @override
@@ -2279,6 +2310,7 @@ class AppSettingsTableData extends DataClass
       koreanLaborLawCompliance,
     );
     map['currency_unit'] = Variable<String>(currencyUnit);
+    map['holiday_country'] = Variable<String>(holidayCountry);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2302,6 +2334,7 @@ class AppSettingsTableData extends DataClass
       activePlanId: Value(activePlanId),
       koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
       currencyUnit: Value(currencyUnit),
+      holidayCountry: Value(holidayCountry),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2327,6 +2360,7 @@ class AppSettingsTableData extends DataClass
         json['koreanLaborLawCompliance'],
       ),
       currencyUnit: serializer.fromJson<String>(json['currencyUnit']),
+      holidayCountry: serializer.fromJson<String>(json['holidayCountry']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2347,6 +2381,7 @@ class AppSettingsTableData extends DataClass
         koreanLaborLawCompliance,
       ),
       'currencyUnit': serializer.toJson<String>(currencyUnit),
+      'holidayCountry': serializer.toJson<String>(holidayCountry),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2363,6 +2398,7 @@ class AppSettingsTableData extends DataClass
     int? activePlanId,
     bool? koreanLaborLawCompliance,
     String? currencyUnit,
+    String? holidayCountry,
     DateTime? updatedAt,
   }) => AppSettingsTableData(
     id: id ?? this.id,
@@ -2381,6 +2417,7 @@ class AppSettingsTableData extends DataClass
     koreanLaborLawCompliance:
         koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
     currencyUnit: currencyUnit ?? this.currencyUnit,
+    holidayCountry: holidayCountry ?? this.holidayCountry,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsTableData copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2412,6 +2449,9 @@ class AppSettingsTableData extends DataClass
       currencyUnit: data.currencyUnit.present
           ? data.currencyUnit.value
           : this.currencyUnit,
+      holidayCountry: data.holidayCountry.present
+          ? data.holidayCountry.value
+          : this.holidayCountry,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2430,6 +2470,7 @@ class AppSettingsTableData extends DataClass
           ..write('activePlanId: $activePlanId, ')
           ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
           ..write('currencyUnit: $currencyUnit, ')
+          ..write('holidayCountry: $holidayCountry, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2448,6 +2489,7 @@ class AppSettingsTableData extends DataClass
     activePlanId,
     koreanLaborLawCompliance,
     currencyUnit,
+    holidayCountry,
     updatedAt,
   );
   @override
@@ -2465,6 +2507,7 @@ class AppSettingsTableData extends DataClass
           other.activePlanId == this.activePlanId &&
           other.koreanLaborLawCompliance == this.koreanLaborLawCompliance &&
           other.currencyUnit == this.currencyUnit &&
+          other.holidayCountry == this.holidayCountry &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2480,6 +2523,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
   final Value<int> activePlanId;
   final Value<bool> koreanLaborLawCompliance;
   final Value<String> currencyUnit;
+  final Value<String> holidayCountry;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -2493,6 +2537,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.activePlanId = const Value.absent(),
     this.koreanLaborLawCompliance = const Value.absent(),
     this.currencyUnit = const Value.absent(),
+    this.holidayCountry = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -2507,6 +2552,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     this.activePlanId = const Value.absent(),
     this.koreanLaborLawCompliance = const Value.absent(),
     this.currencyUnit = const Value.absent(),
+    this.holidayCountry = const Value.absent(),
     required DateTime updatedAt,
   }) : schemaVersion = Value(schemaVersion),
        updatedAt = Value(updatedAt);
@@ -2522,6 +2568,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Expression<int>? activePlanId,
     Expression<bool>? koreanLaborLawCompliance,
     Expression<String>? currencyUnit,
+    Expression<String>? holidayCountry,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -2538,6 +2585,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       if (koreanLaborLawCompliance != null)
         'korean_labor_law_compliance': koreanLaborLawCompliance,
       if (currencyUnit != null) 'currency_unit': currencyUnit,
+      if (holidayCountry != null) 'holiday_country': holidayCountry,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -2554,6 +2602,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     Value<int>? activePlanId,
     Value<bool>? koreanLaborLawCompliance,
     Value<String>? currencyUnit,
+    Value<String>? holidayCountry,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -2569,6 +2618,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
       koreanLaborLawCompliance:
           koreanLaborLawCompliance ?? this.koreanLaborLawCompliance,
       currencyUnit: currencyUnit ?? this.currencyUnit,
+      holidayCountry: holidayCountry ?? this.holidayCountry,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2613,6 +2663,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
     if (currencyUnit.present) {
       map['currency_unit'] = Variable<String>(currencyUnit.value);
     }
+    if (holidayCountry.present) {
+      map['holiday_country'] = Variable<String>(holidayCountry.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2633,6 +2686,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsTableData> {
           ..write('activePlanId: $activePlanId, ')
           ..write('koreanLaborLawCompliance: $koreanLaborLawCompliance, ')
           ..write('currencyUnit: $currencyUnit, ')
+          ..write('holidayCountry: $holidayCountry, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -4437,6 +4491,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> activePlanId,
       Value<bool> koreanLaborLawCompliance,
       Value<String> currencyUnit,
+      Value<String> holidayCountry,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -4452,6 +4507,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> activePlanId,
       Value<bool> koreanLaborLawCompliance,
       Value<String> currencyUnit,
+      Value<String> holidayCountry,
       Value<DateTime> updatedAt,
     });
 
@@ -4516,6 +4572,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get currencyUnit => $composableBuilder(
     column: $table.currencyUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get holidayCountry => $composableBuilder(
+    column: $table.holidayCountry,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4589,6 +4650,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get holidayCountry => $composableBuilder(
+    column: $table.holidayCountry,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -4653,6 +4719,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get holidayCountry => $composableBuilder(
+    column: $table.holidayCountry,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
@@ -4705,6 +4776,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> activePlanId = const Value.absent(),
                 Value<bool> koreanLaborLawCompliance = const Value.absent(),
                 Value<String> currencyUnit = const Value.absent(),
+                Value<String> holidayCountry = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -4718,6 +4790,7 @@ class $$AppSettingsTableTableTableManager
                 activePlanId: activePlanId,
                 koreanLaborLawCompliance: koreanLaborLawCompliance,
                 currencyUnit: currencyUnit,
+                holidayCountry: holidayCountry,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -4733,6 +4806,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> activePlanId = const Value.absent(),
                 Value<bool> koreanLaborLawCompliance = const Value.absent(),
                 Value<String> currencyUnit = const Value.absent(),
+                Value<String> holidayCountry = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -4746,6 +4820,7 @@ class $$AppSettingsTableTableTableManager
                 activePlanId: activePlanId,
                 koreanLaborLawCompliance: koreanLaborLawCompliance,
                 currencyUnit: currencyUnit,
+                holidayCountry: holidayCountry,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

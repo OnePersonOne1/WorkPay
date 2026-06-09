@@ -37,6 +37,7 @@ class SettingsPage extends ConsumerWidget {
             if (settings.koreanLaborLawCompliance) const _AdvancedTile(),
             _CurrencyUnitTile(current: settings.currencyUnit),
             const _AllowOverlapTile(),
+            _HolidayCountryTile(current: settings.holidayCountry),
             _SectionHeader(l.settingsSectionBackup),
             const _BackupTile(),
           ],
@@ -216,6 +217,59 @@ class _AllowOverlapTile extends ConsumerWidget {
           settings.copyWith(
             payrollConstantsJson:
                 jsonEncode(constants.copyWith(allowShiftOverlap: v).toJson()),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 공휴일 기준 국가. 'KR'=대한민국(기본), 'none'=표시 안 함.
+class _HolidayCountryTile extends ConsumerWidget {
+  const _HolidayCountryTile({required this.current});
+  final String current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final label = current == 'none'
+        ? l.settingsHolidayCountryNone
+        : l.settingsHolidayCountryKR;
+    return ListTile(
+      leading: const Icon(Icons.public),
+      title: Text(l.settingsHolidayCountry),
+      subtitle: Text('$label · ${l.settingsHolidayCountryHint}'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final picked = await showModalBottomSheet<String>(
+          context: context,
+          showDragHandle: true,
+          builder: (ctx) {
+            final lc = AppLocalizations.of(ctx);
+            Widget opt(String value, String text) => ListTile(
+                  title: Text(text),
+                  trailing: current == value ? const Icon(Icons.check) : null,
+                  onTap: () => Navigator.of(ctx).pop(value),
+                );
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  opt('KR', lc.settingsHolidayCountryKR),
+                  opt('none', lc.settingsHolidayCountryNone),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+        );
+        if (picked == null || picked == current) return;
+        final repo = ref.read(appSettingsRepositoryProvider);
+        final settings = await repo.read();
+        await repo.update(
+          settings.copyWith(
+            holidayCountry: picked,
             updatedAt: DateTime.now().toUtc(),
           ),
         );

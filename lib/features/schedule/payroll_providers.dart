@@ -56,9 +56,18 @@ final payrollConstantsProvider = Provider<PayrollConstants>((ref) {
   );
 });
 
-/// 한국 공휴일 캘린더. 향후 패키지 교체 시 이 provider만 갈아끼움.
+/// 공휴일 캘린더. AppSettings.holidayCountry로 결정.
+/// 'KR'=한국(기본), 'none'=공휴일 없음. 향후 다른 국가 추가 가능.
 final holidayCalendarProvider = Provider<HolidayCalendar>((ref) {
-  return FixedHolidayCalendar.korea2025to2027();
+  final async = ref.watch(appSettingsProvider);
+  final country = async.maybeWhen(
+    data: (s) => s.holidayCountry,
+    orElse: () => 'KR',
+  );
+  return switch (country) {
+    'none' => FixedHolidayCalendar(const []),
+    _ => FixedHolidayCalendar.korea2025to2027(),
+  };
 });
 
 final payrollEngineProvider = Provider<PayrollEngine>((ref) {

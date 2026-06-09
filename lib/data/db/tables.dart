@@ -95,6 +95,10 @@ class AppSettingsTable extends Table {
   /// 사용자가 설정에서 자유 입력 (예: 원, $, USD).
   TextColumn get currencyUnit => text().withDefault(const Constant('원'))();
 
+  /// 공휴일 기준 국가. 'KR'=대한민국(기본), 'none'=표시 안 함. 추후 'US' 등 확장.
+  /// 공휴일 색칠 + 휴일근로 가산 판정에 사용.
+  TextColumn get holidayCountry => text().withDefault(const Constant('KR'))();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

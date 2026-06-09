@@ -68,6 +68,7 @@ extension AppSettingsRowToEntity on db.AppSettingsTableData {
         activePlanId: activePlanId,
         koreanLaborLawCompliance: koreanLaborLawCompliance,
         currencyUnit: currencyUnit,
+        holidayCountry: holidayCountry,
         updatedAt: updatedAt,
       );
 }
@@ -85,6 +86,7 @@ extension AppSettingsEntityToCompanion on ent.AppSettings {
         activePlanId: Value(activePlanId),
         koreanLaborLawCompliance: Value(koreanLaborLawCompliance),
         currencyUnit: Value(currencyUnit),
+        holidayCountry: Value(holidayCountry),
         updatedAt: Value(updatedAt),
       );
 }

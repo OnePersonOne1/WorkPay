@@ -114,6 +114,7 @@ class BackupService {
         activePlanId: settings.activePlanId,
         koreanLaborLawCompliance: settings.koreanLaborLawCompliance,
         currencyUnit: settings.currencyUnit,
+        holidayCountry: settings.holidayCountry,
       ),
     );
 
@@ -227,6 +228,7 @@ class BackupService {
           koreanLaborLawCompliance:
               Value(data.appSettings.koreanLaborLawCompliance),
           currencyUnit: Value(data.appSettings.currencyUnit),
+          holidayCountry: Value(data.appSettings.holidayCountry),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );

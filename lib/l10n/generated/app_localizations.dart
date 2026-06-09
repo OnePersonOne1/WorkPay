@@ -542,6 +542,12 @@ abstract class AppLocalizations {
   /// **'휴게'**
   String get shiftSheetBreak;
 
+  /// No description provided for @shiftSheetBreakUnit.
+  ///
+  /// In ko, this message translates to:
+  /// **'단위: 분'**
+  String get shiftSheetBreakUnit;
+
   /// No description provided for @shiftSheetMemo.
   ///
   /// In ko, this message translates to:
@@ -1273,6 +1279,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'예) 원, \$, USD'**
   String get settingsCurrencyUnitFieldHint;
+
+  /// No description provided for @settingsHolidayCountry.
+  ///
+  /// In ko, this message translates to:
+  /// **'공휴일 기준 국가'**
+  String get settingsHolidayCountry;
+
+  /// No description provided for @settingsHolidayCountryHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'공휴일 색 표시와 휴일근로 가산 계산에 사용해요.'**
+  String get settingsHolidayCountryHint;
+
+  /// No description provided for @settingsHolidayCountryKR.
+  ///
+  /// In ko, this message translates to:
+  /// **'대한민국'**
+  String get settingsHolidayCountryKR;
+
+  /// No description provided for @settingsHolidayCountryNone.
+  ///
+  /// In ko, this message translates to:
+  /// **'표시 안 함'**
+  String get settingsHolidayCountryNone;
 
   /// No description provided for @settingsLaborLaw.
   ///

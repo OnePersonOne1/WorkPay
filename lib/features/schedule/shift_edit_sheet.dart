@@ -569,7 +569,7 @@ class _ShiftEditSheetState extends ConsumerState<_ShiftEditSheet> {
               controller: _breakCtrl,
               decoration: InputDecoration(
                 labelText: l.shiftSheetBreak,
-                suffixText: 'm',
+                suffixText: l.shiftSheetBreakUnit,
                 border: const OutlineInputBorder(),
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: false),
