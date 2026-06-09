@@ -116,8 +116,7 @@ msix_config:
   msix_version: 1.0.0.0
   publisher: CN=OnePersonOne1
   capabilities: ""
-  # 아이콘 생성 후 주석 해제 (assets/icon/app_icon.png 존재해야 함):
-  # logo_path: assets/icon/app_icon.png
+  logo_path: assets/icon/app_icon.png
 
 # 앱 아이콘 일괄 생성 (dart run flutter_launcher_icons).
 # 마스터 1024x1024 PNG를 assets/icon/app_icon.png에 두고 실행한다.
