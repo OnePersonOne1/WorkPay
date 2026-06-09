@@ -492,6 +492,8 @@ class _MonthlyCalendar extends ConsumerWidget {
 
     _DayCell makeCell(DateTime day, {bool isToday = false, bool isSelected = false}) {
       final key = DateTime(day.year, day.month, day.day);
+      // 표시 중인 달이 아닌 날(전월/다음월) = outside → 흐리게.
+      final isOutside = day.month != month.month || day.year != month.year;
       return _DayCell(
         day: day,
         minutes: dailyMinutes[key],
@@ -504,6 +506,7 @@ class _MonthlyCalendar extends ConsumerWidget {
         use24Hour: use24,
         isToday: isToday,
         isSelected: isSelected,
+        isOutside: isOutside,
       );
     }
 
@@ -523,6 +526,11 @@ class _MonthlyCalendar extends ConsumerWidget {
       selectedDayPredicate: (d) => isSameDay(d, selected),
       onDaySelected: (selectedDay, focusedDay) {
         ref.read(selectedDateProvider.notifier).set(selectedDay);
+        // 흐린 전월/다음월 날짜를 탭하면 그 달로 이동(구글 캘린더식).
+        final m = ref.read(selectedMonthProvider);
+        if (selectedDay.year != m.year || selectedDay.month != m.month) {
+          ref.read(selectedMonthProvider.notifier).set(selectedDay);
+        }
       },
       onPageChanged: (focusedDay) {
         ref.read(selectedMonthProvider.notifier).set(focusedDay);
@@ -539,7 +547,8 @@ class _MonthlyCalendar extends ConsumerWidget {
       // 좌상단 날짜 + 좌측 정렬 컨텐츠. 시간 라인 2개 + 총 + 일급까지 들어가도록.
       rowHeight: vis.daily ? 94 : 78,
       calendarStyle: const CalendarStyle(
-        outsideDaysVisible: false,
+        // 전월/다음월 날짜도 표시(흐리게) → 모든 격자 칸이 실제 셀이라 테두리가 항상 완전.
+        outsideDaysVisible: true,
         cellMargin: EdgeInsets.zero,
         cellPadding: EdgeInsets.zero,
       ),
@@ -559,6 +568,8 @@ class _MonthlyCalendar extends ConsumerWidget {
         defaultBuilder: (ctx, day, _) => makeCell(day),
         todayBuilder: (ctx, day, _) => makeCell(day, isToday: true),
         selectedBuilder: (ctx, day, _) => makeCell(day, isSelected: true),
+        // 전월/다음월 날짜 — makeCell이 isOutside를 자동 판정해 흐리게 렌더.
+        outsideBuilder: (ctx, day, _) => makeCell(day),
         // 요일 헤더 커스텀 — 일요일 빨강, 토요일 파랑
         dowBuilder: (ctx, day) {
           final lc = AppLocalizations.of(ctx);
@@ -597,6 +608,7 @@ class _DayCell extends StatelessWidget {
     this.payWon,
     this.isToday = false,
     this.isSelected = false,
+    this.isOutside = false,
   });
   final DateTime day;
   final int? minutes;
@@ -609,6 +621,7 @@ class _DayCell extends StatelessWidget {
   final bool use24Hour;
   final bool isToday;
   final bool isSelected;
+  final bool isOutside;
 
   static const _kSundayRed = Color(0xFFEF4444);
   static const _kSaturdayBlue = Color(0xFF3B82F6);
@@ -616,6 +629,32 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
+    // 전월/다음월(흐림) 셀 — 날짜 숫자만 회색조로. 시프트/일급은 표시 안 함.
+    // 테두리는 일반 셀과 동일(right+bottom)이라 격자가 빠짐없이 이어짐.
+    if (isOutside && !isSelected && !isToday) {
+      final lineColor = scheme.outlineVariant;
+      return SizedBox.expand(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              right: BorderSide(color: lineColor, width: 1),
+              bottom: BorderSide(color: lineColor, width: 1),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(5, 3, 4, 2),
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     // 셀 배경: 선택 시만 채움. 오늘은 날짜 숫자에만 작은 배지 (보편적 달력 스타일).
     final Color? bg = isSelected ? scheme.primary : null;
@@ -671,10 +710,6 @@ class _DayCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           border: Border(
-            // 1일이 주 중간이면 좌측 이웃(빈 outside 셀)이 우변을 안 그려 좌변이 비어 보임 → 보강.
-            left: day.day == 1
-                ? BorderSide(color: lineColor, width: 1)
-                : BorderSide.none,
             right: BorderSide(color: lineColor, width: 1),
             bottom: BorderSide(color: lineColor, width: 1),
           ),
