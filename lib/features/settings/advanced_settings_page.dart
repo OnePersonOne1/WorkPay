@@ -202,13 +202,6 @@ class _State extends ConsumerState<AdvancedSettingsPage> {
                 setState(() => _edited = _edited.copyWith(sundayIsHoliday: v)),
             contentPadding: EdgeInsets.zero,
           ),
-          SwitchListTile(
-            title: Text(l.shiftSheetOverlapTitle),
-            value: _edited.allowShiftOverlap,
-            onChanged: (v) =>
-                setState(() => _edited = _edited.copyWith(allowShiftOverlap: v)),
-            contentPadding: EdgeInsets.zero,
-          ),
         ],
       ),
       bottomNavigationBar: SafeArea(

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../../data/providers.dart';
 import '../../domain/entity/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../backup/backup_page.dart';
+import '../schedule/payroll_providers.dart';
 import 'advanced_settings_page.dart';
 import 'settings_providers.dart';
 
@@ -33,6 +36,7 @@ class SettingsPage extends ConsumerWidget {
             _LaborLawTile(value: settings.koreanLaborLawCompliance),
             if (settings.koreanLaborLawCompliance) const _AdvancedTile(),
             _CurrencyUnitTile(current: settings.currencyUnit),
+            const _AllowOverlapTile(),
             _SectionHeader(l.settingsSectionBackup),
             const _BackupTile(),
           ],
@@ -184,6 +188,34 @@ class _CurrencyUnitTile extends ConsumerWidget {
         await repo.update(
           settings.copyWith(
             currencyUnit: unit,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 겹치는 시프트 허용 토글. 저장은 PayrollConstants.allowShiftOverlap(payrollConstantsJson).
+class _AllowOverlapTile extends ConsumerWidget {
+  const _AllowOverlapTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final constants = ref.watch(payrollConstantsProvider);
+    return SwitchListTile(
+      secondary: const Icon(Icons.layers_outlined),
+      title: Text(l.settingsAllowOverlap),
+      subtitle: Text(l.settingsAllowOverlapHint),
+      value: constants.allowShiftOverlap,
+      onChanged: (v) async {
+        final repo = ref.read(appSettingsRepositoryProvider);
+        final settings = await repo.read();
+        await repo.update(
+          settings.copyWith(
+            payrollConstantsJson:
+                jsonEncode(constants.copyWith(allowShiftOverlap: v).toJson()),
             updatedAt: DateTime.now().toUtc(),
           ),
         );

@@ -46,7 +46,6 @@ class _Row extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         const Icon(Icons.layers_outlined, size: 18),
@@ -61,27 +60,17 @@ class _Row extends ConsumerWidget {
         _MocksMenu(active: active, mocks: mocks, month: month),
         const Spacer(),
         if (!active.isMain) ...[
-          TextButton.icon(
-            icon: const Icon(Icons.download, size: 16),
-            label: Text(l.planLoadFromMain),
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: l.planLoadFromMain,
             onPressed: () => _loadFromMain(context, ref, active),
           ),
-          TextButton.icon(
-            icon: const Icon(Icons.publish, size: 16),
-            label: Text(l.planReplaceMain(active.name)),
+          IconButton(
+            icon: const Icon(Icons.publish),
+            tooltip: l.planReplaceMain(active.name),
             onPressed: () => _replaceMain(context, ref, active),
           ),
-        ] else if (mocks.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              l.scheduleNoMockHint,
-              style: TextStyle(
-                color: scheme.onSurfaceVariant,
-                fontSize: 11,
-              ),
-            ),
-          ),
+        ],
       ],
     );
   }

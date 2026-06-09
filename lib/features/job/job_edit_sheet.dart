@@ -183,6 +183,19 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
     });
   }
 
+  /// 모든 수당·공제 옵션을 한 번에 OFF (버튼식). 프리셋 선택도 해제.
+  void _disableAll() {
+    setState(() {
+      _selectedPreset = null;
+      _weeklyHolidayAllowance = false;
+      _nightPremium = false;
+      _dailyOvertime = false;
+      _weeklyOvertime = false;
+      _holidayPremium = false;
+      _deductionMode = DeductionMode.none;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
@@ -320,6 +333,7 @@ class _JobEditSheetState extends ConsumerState<_JobEditSheet> {
               _AdvancedSection(
                 selectedPreset: _selectedPreset,
                 onPresetToggled: _togglePreset,
+                onDisableAll: _disableAll,
                 weeklyHolidayAllowance: _weeklyHolidayAllowance,
                 nightPremium: _nightPremium,
                 dailyOvertime: _dailyOvertime,
@@ -438,6 +452,7 @@ class _AdvancedSection extends StatelessWidget {
   const _AdvancedSection({
     required this.selectedPreset,
     required this.onPresetToggled,
+    required this.onDisableAll,
     required this.weeklyHolidayAllowance,
     required this.nightPremium,
     required this.dailyOvertime,
@@ -456,6 +471,7 @@ class _AdvancedSection extends StatelessWidget {
 
   final JobPreset? selectedPreset;
   final void Function(JobPreset preset, bool on) onPresetToggled;
+  final VoidCallback onDisableAll;
   final bool weeklyHolidayAllowance;
   final bool nightPremium;
   final bool dailyOvertime;
@@ -481,10 +497,23 @@ class _AdvancedSection extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          // 기본 펼침 — 옵션이 한눈에 보이도록.
+          initiallyExpanded: true,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
           title: Text(l.jobsAdvancedOptions),
           children: [
+            // ── 프리셋 ──
+            _GroupLabel(l.jobAdvPresetSection),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+              child: Text(
+                l.jobAdvPresetCaption,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
             for (final preset in JobPreset.values)
               SwitchListTile(
                 value: selectedPreset == preset,
@@ -493,7 +522,20 @@ class _AdvancedSection extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 dense: true,
               ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.layers_clear_outlined, size: 18),
+                  label: Text(l.jobAdvDisableAll),
+                  onPressed: onDisableAll,
+                ),
+              ),
+            ),
             const Divider(height: 28),
+            // ── 수당 ──
+            _GroupLabel(l.jobAdvAllowanceSection),
             _ToggleTile(
               title: l.jobAdvWeeklyHoliday,
               value: weeklyHolidayAllowance,
@@ -520,22 +562,16 @@ class _AdvancedSection extends StatelessWidget {
               onChanged: onHoliday,
             ),
             const Divider(height: 24),
+            // ── 입력 옵션 ──
+            _GroupLabel(l.jobAdvInputSection),
             _ToggleTile(
               title: l.jobAdvPreciseBreak,
               value: preciseBreakInput,
               onChanged: onPreciseBreak,
             ),
             const Divider(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                l.jobAdvDeductionMode,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: scheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
+            // ── 세금·공제 ──
+            _GroupLabel(l.jobAdvTaxSection),
             RadioGroup<DeductionMode>(
               groupValue: deductionMode,
               onChanged: (v) {
@@ -556,6 +592,26 @@ class _AdvancedSection extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 고급옵션 카드 내부 소제목.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
       ),
     );
   }

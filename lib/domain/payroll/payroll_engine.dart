@@ -98,12 +98,13 @@ class PayrollEngine {
       week.totalMinutes += shiftTotal.totalMinutes;
       week.dailyOvertimeMinutesUsed += daily.dailyOvertimeMinutes;
 
-      // 주 슬라이스: 주 시작이 target 월에 속하는 경우만
-      if (_weekResolver.weekBelongsToMonth(ws, year, month)) {
-        weeklyWorkMinutes[ws] =
-            (weeklyWorkMinutes[ws] ?? 0) + shiftTotal.totalMinutes;
-        weeklyPayWon[ws] = (weeklyPayWon[ws] ?? 0) + dayLevelPayWon;
-      }
+      // 주 슬라이스: 해당 월 시프트가 속한 모든 주를 포함한다.
+      // 엔진은 target 월 시프트만 입력받으므로 등장하는 주는 모두 그 달의 날을 포함.
+      // 월초가 월요일이 아니어도(예: 5/1 금) 부분 첫 주(5/1~3)가 1주차로 표시됨.
+      // (그 주의 주 OT/주휴 가산은 아래 루프에서 weekBelongsToMonth로 별도 귀속.)
+      weeklyWorkMinutes[ws] =
+          (weeklyWorkMinutes[ws] ?? 0) + shiftTotal.totalMinutes;
+      weeklyPayWon[ws] = (weeklyPayWon[ws] ?? 0) + dayLevelPayWon;
     }
 
     // 주 단위 가산 계산 + 주 슬라이스에 추가

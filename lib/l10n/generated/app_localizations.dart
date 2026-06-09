@@ -458,12 +458,6 @@ abstract class AppLocalizations {
   /// **'(휴게 {minutes}분)'**
   String scheduleBreakSuffix(int minutes);
 
-  /// No description provided for @scheduleNoMockHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'가안으로 시뮬레이션할 수 있어요'**
-  String get scheduleNoMockHint;
-
   /// No description provided for @weekMon.
   ///
   /// In ko, this message translates to:
@@ -1094,6 +1088,42 @@ abstract class AppLocalizations {
   /// **'4대보험 요율 (만분율)'**
   String get jobAdvFourInsuranceRate;
 
+  /// No description provided for @jobAdvPresetSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리셋'**
+  String get jobAdvPresetSection;
+
+  /// No description provided for @jobAdvPresetCaption.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동으로 옵션을 끄고 켜줘요.'**
+  String get jobAdvPresetCaption;
+
+  /// No description provided for @jobAdvDisableAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'옵션 전부 비활성화'**
+  String get jobAdvDisableAll;
+
+  /// No description provided for @jobAdvAllowanceSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'수당'**
+  String get jobAdvAllowanceSection;
+
+  /// No description provided for @jobAdvTaxSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'세금·공제'**
+  String get jobAdvTaxSection;
+
+  /// No description provided for @jobAdvInputSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력 옵션'**
+  String get jobAdvInputSection;
+
   /// No description provided for @deductionNone.
   ///
   /// In ko, this message translates to:
@@ -1247,8 +1277,20 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLaborLawHint.
   ///
   /// In ko, this message translates to:
-  /// **'야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.'**
+  /// **'야간·연장·주휴·공제 등 한국 노동법 관련 항목과 주요 상수를 켜요. 실제 적용 여부는 근무처별로 \'근무처 관리\'에서 정해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.'**
   String get settingsLaborLawHint;
+
+  /// No description provided for @settingsAllowOverlap.
+  ///
+  /// In ko, this message translates to:
+  /// **'겹치는 시프트 허용'**
+  String get settingsAllowOverlap;
+
+  /// No description provided for @settingsAllowOverlapHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시간이 겹치는 시프트도 경고 없이 저장할 수 있어요.'**
+  String get settingsAllowOverlapHint;
 
   /// No description provided for @settingsAdvancedConstants.
   ///

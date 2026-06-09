@@ -222,9 +222,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get scheduleNoMockHint => '가안으로 시뮬레이션할 수 있어요';
-
-  @override
   String get weekMon => '월';
 
   @override
@@ -599,6 +596,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get jobAdvFourInsuranceRate => '4대보험 요율 (만분율)';
 
   @override
+  String get jobAdvPresetSection => '프리셋';
+
+  @override
+  String get jobAdvPresetCaption => '자동으로 옵션을 끄고 켜줘요.';
+
+  @override
+  String get jobAdvDisableAll => '옵션 전부 비활성화';
+
+  @override
+  String get jobAdvAllowanceSection => '수당';
+
+  @override
+  String get jobAdvTaxSection => '세금·공제';
+
+  @override
+  String get jobAdvInputSection => '입력 옵션';
+
+  @override
   String get deductionNone => '비과세';
 
   @override
@@ -676,7 +691,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsLaborLawHint =>
-      '야간/연장/주휴/공제 등 한국 노동법 기반 옵션을 사용해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.';
+      '야간·연장·주휴·공제 등 한국 노동법 관련 항목과 주요 상수를 켜요. 실제 적용 여부는 근무처별로 \'근무처 관리\'에서 정해요. 끄면 단순 시급 × 근무시간만 계산하고 관련 옵션이 숨겨져요.';
+
+  @override
+  String get settingsAllowOverlap => '겹치는 시프트 허용';
+
+  @override
+  String get settingsAllowOverlapHint => '시간이 겹치는 시프트도 경고 없이 저장할 수 있어요.';
 
   @override
   String get settingsAdvancedConstants => '전문가 설정 (가산률·상수)';

@@ -222,9 +222,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get scheduleNoMockHint => '— try a mock plan for simulation';
-
-  @override
   String get weekMon => 'Mon';
 
   @override
@@ -602,6 +599,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jobAdvFourInsuranceRate => '4 Insurances rate (per 10,000)';
 
   @override
+  String get jobAdvPresetSection => 'Presets';
+
+  @override
+  String get jobAdvPresetCaption => 'Automatically turns options on/off.';
+
+  @override
+  String get jobAdvDisableAll => 'Turn off all options';
+
+  @override
+  String get jobAdvAllowanceSection => 'Allowances';
+
+  @override
+  String get jobAdvTaxSection => 'Tax & deductions';
+
+  @override
+  String get jobAdvInputSection => 'Input options';
+
+  @override
   String get deductionNone => 'No deduction';
 
   @override
@@ -679,7 +694,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLaborLawHint =>
-      'Use options based on Korean labor law (night/overtime/weekly holiday/deductions). When off, only simple wage × hours is calculated and related options are hidden.';
+      'Enables Korean labor-law items and key constants (night/overtime/weekly holiday/deductions). Whether they actually apply is set per workplace in \'Manage workplaces\'. When off, only simple wage × hours is calculated and related options are hidden.';
+
+  @override
+  String get settingsAllowOverlap => 'Allow overlapping shifts';
+
+  @override
+  String get settingsAllowOverlapHint =>
+      'Lets you save time-overlapping shifts without a warning.';
 
   @override
   String get settingsAdvancedConstants => 'Advanced constants (rates)';

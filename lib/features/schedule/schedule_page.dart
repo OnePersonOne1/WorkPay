@@ -67,45 +67,61 @@ class SchedulePage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l.scheduleTitle),
         actions: [
-          if (hasJobs)
-            TextButton.icon(
-              icon: const Icon(Icons.event_repeat),
-              label: Text(l.scheduleAddRecurring),
-              onPressed: () => showRecurringShiftSheet(context),
-            ),
-          TextButton.icon(
-            icon: const Icon(Icons.receipt_long_outlined),
-            label: Text(l.scheduleViewPayroll),
-            onPressed: () => pushMonthlyReportDetail(context),
-          ),
-          // 되돌리기 / 다시 실행 — 각 스택 비었을 때 disabled
+          // 되돌리기 / 다시 실행 — 아이콘만(좁은 화면 대응), 스택 비었을 때 disabled
           Consumer(builder: (ctx, r, _) {
             final lc = AppLocalizations.of(ctx);
             final undoState = r.watch(undoControllerProvider);
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextButton.icon(
+                IconButton(
                   icon: const Icon(Icons.undo),
-                  label: Text(lc.actionUndo),
+                  tooltip: lc.actionUndo,
                   onPressed:
                       undoState.canUndo ? () => _performUndo(context, r) : null,
                 ),
-                TextButton.icon(
+                IconButton(
                   icon: const Icon(Icons.redo),
-                  label: Text(lc.actionRedo),
+                  tooltip: lc.actionRedo,
                   onPressed:
                       undoState.canRedo ? () => _performRedo(context, r) : null,
                 ),
               ],
             );
           }),
-          TextButton.icon(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            label: Text(l.scheduleResetMonth),
-            onPressed: () => _deleteMonthShifts(context, ref),
+          // 덜 빈번한 동작은 오버플로 메뉴로 (안드로이드 폭 초과 방지)
+          PopupMenuButton<String>(
+            onSelected: (v) {
+              switch (v) {
+                case 'recurring':
+                  showRecurringShiftSheet(context);
+                case 'reset':
+                  _deleteMonthShifts(context, ref);
+              }
+            },
+            itemBuilder: (ctx) {
+              final lc = AppLocalizations.of(ctx);
+              return [
+                if (hasJobs)
+                  PopupMenuItem(
+                    value: 'recurring',
+                    child: ListTile(
+                      leading: const Icon(Icons.event_repeat),
+                      title: Text(lc.scheduleAddRecurring),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: 'reset',
+                  child: ListTile(
+                    leading: const Icon(Icons.delete_sweep_outlined),
+                    title: Text(lc.scheduleResetMonth),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ];
+            },
           ),
-          const SizedBox(width: 4),
         ],
       ),
       body: ListView(
@@ -279,12 +295,6 @@ class _VisibilityToggles extends ConsumerWidget {
             onSelected: (_) => notifier.toggleWeekly(),
             showCheckmark: true,
           ),
-          FilterChip(
-            label: Text(l.scheduleVisMonthly),
-            selected: vis.monthly,
-            onSelected: (_) => notifier.toggleMonthly(),
-            showCheckmark: true,
-          ),
         ],
       ),
     );
@@ -430,9 +440,9 @@ class _CalendarHeader extends ConsumerWidget {
             tooltip: l.scheduleNextMonth,
             onPressed: () => shift(1),
           ),
-          TextButton.icon(
-            icon: const Icon(Icons.today, size: 18),
-            label: Text(l.scheduleBackToToday),
+          IconButton(
+            icon: const Icon(Icons.today),
+            tooltip: l.scheduleBackToToday,
             onPressed: () {
               final now = DateTime.now();
               ref.read(selectedMonthProvider.notifier).set(now);
@@ -519,6 +529,8 @@ class _MonthlyCalendar extends ConsumerWidget {
       },
       calendarFormat: CalendarFormat.month,
       availableCalendarFormats: {CalendarFormat.month: AppLocalizations.of(context).monthLabel},
+      // 가로 스와이프=월 이동만. 세로 드래그는 부모 ListView 스크롤로 전달(휠 없는 환경 대응).
+      availableGestures: AvailableGestures.horizontalSwipe,
       startingDayOfWeek: StartingDayOfWeek.monday,
       // 기본 헤더는 숨기고 _CalendarHeader를 위에 별도 배치
       headerVisible: false,
@@ -659,6 +671,10 @@ class _DayCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           border: Border(
+            // 1일이 주 중간이면 좌측 이웃(빈 outside 셀)이 우변을 안 그려 좌변이 비어 보임 → 보강.
+            left: day.day == 1
+                ? BorderSide(color: lineColor, width: 1)
+                : BorderSide.none,
             right: BorderSide(color: lineColor, width: 1),
             bottom: BorderSide(color: lineColor, width: 1),
           ),
@@ -996,15 +1012,12 @@ class _WeeklySummariesUnderCalendar extends ConsumerWidget {
   }
 }
 
-/// 월 합계 바 — 선택일 패널 위에 노출. vis.monthly가 ON일 때만.
-/// 탭하면 월별 상세 명세 페이지 진입.
+/// 월 합계 바 — 선택일 패널 위에 항상 노출. 탭하면 월별 상세 명세 페이지 진입.
 class _MonthlySummaryBar extends ConsumerWidget {
   const _MonthlySummaryBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vis = ref.watch(payrollVisibilityProvider);
-    if (!vis.monthly) return const SizedBox.shrink();
     final asyncComp = ref.watch(monthlyComputationProvider);
     return _MonthlySummary(asyncComp: asyncComp);
   }
@@ -1062,6 +1075,11 @@ class _MonthlySummary extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 2),
                   Icon(
                     Icons.chevron_right,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
