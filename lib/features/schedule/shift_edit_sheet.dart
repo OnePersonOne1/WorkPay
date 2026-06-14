@@ -103,10 +103,22 @@ Future<bool?> showShiftEditSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-      child: _ShiftEditSheet(initial: shift, defaultDate: defaultDate),
+    // 시트가 화면 대부분을 덮어 저장 버튼이 시스템 내비게이션 바 뒤로
+    // 가려지지 않도록 높이를 안전 영역 위로 제한 + 하단 안전 영역만큼 패딩.
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.of(context).size.height -
+          MediaQuery.of(context).padding.top -
+          kToolbarHeight,
     ),
+    builder: (ctx) {
+      final mq = MediaQuery.of(ctx);
+      // 키보드(viewInsets)와 시스템 내비게이션 바(viewPadding) 둘 다 확보.
+      final bottom = mq.viewInsets.bottom + mq.viewPadding.bottom;
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: _ShiftEditSheet(initial: shift, defaultDate: defaultDate),
+      );
+    },
   );
 }
 
