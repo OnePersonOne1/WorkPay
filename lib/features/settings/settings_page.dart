@@ -8,6 +8,7 @@ import '../../data/providers.dart';
 import '../../domain/entity/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../backup/backup_page.dart';
+import '../calendar_export/calendar_export_page.dart';
 import '../schedule/payroll_providers.dart';
 import 'advanced_settings_page.dart';
 import 'settings_providers.dart';
@@ -38,6 +39,8 @@ class SettingsPage extends ConsumerWidget {
             _CurrencyUnitTile(current: settings.currencyUnit),
             const _AllowOverlapTile(),
             _HolidayCountryTile(current: settings.holidayCountry),
+            _SectionHeader(l.settingsSectionCalendar),
+            const _CalendarExportTile(),
             _SectionHeader(l.settingsSectionBackup),
             const _BackupTile(),
           ],
@@ -397,6 +400,29 @@ class _LaborLawTile extends ConsumerWidget {
             koreanLaborLawCompliance: v,
             updatedAt: DateTime.now().toUtc(),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _CalendarExportTile extends StatelessWidget {
+  const _CalendarExportTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ListTile(
+      leading: const Icon(Icons.event_available),
+      title: Text(l.calExportTitle),
+      subtitle: Text(
+        l.settingsCalendarExportHint,
+        style: const TextStyle(fontSize: 12),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const CalendarExportPage()),
         );
       },
     );

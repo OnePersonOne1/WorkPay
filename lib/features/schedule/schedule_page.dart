@@ -11,6 +11,7 @@ import '../../data/providers.dart';
 import '../../domain/entity/job.dart';
 import '../../domain/entity/shift.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../calendar_export/calendar_export_page.dart';
 import '../settings/settings_providers.dart';
 import '../job/job_providers.dart';
 import '../job/jobs_page.dart';
@@ -116,6 +117,17 @@ class _ActionToolbar extends ConsumerWidget {
             icon: Icons.event_repeat,
             label: l.scheduleAddRecurring,
             onTap: hasJobs ? () => showRecurringShiftSheet(context) : null,
+          ),
+          _ToolbarButton(
+            icon: Icons.ios_share,
+            label: l.calExportToolbarLabel,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CalendarExportPage(),
+                ),
+              );
+            },
           ),
         ],
       ),

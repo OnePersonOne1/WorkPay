@@ -1009,4 +1009,65 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get deductionModeInsurance => '4대보험';
+
+  @override
+  String get calExportTitle => '구글 캘린더로 보내기';
+
+  @override
+  String get calExportToolbarLabel => '캘린더 공유';
+
+  @override
+  String get settingsSectionCalendar => '캘린더 연동';
+
+  @override
+  String get settingsCalendarExportHint => '로그인 없이 캘린더 파일(.ics)로 근무 일정을 옮겨요';
+
+  @override
+  String calExportMonthShiftCount(int count) {
+    return '이 달의 근무 $count건이 캘린더 일정으로 만들어져요.';
+  }
+
+  @override
+  String get calExportNoShifts => '이 달에는 근무가 없어요. 위에서 다른 달을 선택해 주세요.';
+
+  @override
+  String get calExportButton => '캘린더 파일(.ics) 만들기';
+
+  @override
+  String get calExportFirstTimeTitle => '처음이신가요? 이렇게 동작해요';
+
+  @override
+  String get calExportFirstTimeBody =>
+      '구글 계정 로그인이나 인터넷 연동 없이, 어느 캘린더 앱에서나 읽을 수 있는 표준 일정 파일(.ics)을 만들어 드려요.\n만든 파일을 구글 캘린더에서 \'가져오기\' 하면 이 달의 근무가 일정으로 등록돼요. 애플·네이버 캘린더에서도 같은 방법으로 쓸 수 있어요.';
+
+  @override
+  String get calExportHowToTitle => '구글 캘린더에 넣는 방법';
+
+  @override
+  String get calExportHowToMobile =>
+      '📱 스마트폰\n1. 아래 \'캘린더 파일 만들기\' 버튼을 눌러요.\n2. 공유 목록에서 \'캘린더\' 또는 \'Google 캘린더\'를 선택해요.\n   (목록에 없다면 \'파일에 저장\'을 누른 뒤, 파일 앱에서 저장된 .ics 파일을 눌러 열어요)\n3. 열리는 화면에서 \'추가\' 또는 \'저장\'을 누르면 끝!';
+
+  @override
+  String get calExportHowToPc =>
+      '💻 컴퓨터\n1. 파일을 컴퓨터에 저장해요.\n2. calendar.google.com 접속 → 오른쪽 위 ⚙(설정) → \'가져오기 및 내보내기\'를 열어요.\n3. 저장한 파일을 선택하고 \'가져오기\'를 누르면 끝!';
+
+  @override
+  String get calExportNotesTitle => '알아두면 좋아요';
+
+  @override
+  String get calExportNotesBody =>
+      '• 파일에는 근무처 이름·근무 시간·메모만 들어가요. 시급이나 월급 금액은 포함되지 않아요.\n• 같은 달을 두 번 가져오면 일정이 중복될 수 있어요. 근무를 수정했다면 구글 캘린더에서 이전에 가져온 일정을 지운 뒤 다시 가져오는 걸 추천해요.\n• 앱에서 근무를 바꿔도 구글 캘린더에 자동으로 반영되지는 않아요. 바뀐 달의 파일을 다시 보내 주세요.';
+
+  @override
+  String get calExportUnknownJob => '근무';
+
+  @override
+  String calExportSaved(String path) {
+    return '캘린더 파일이 만들어졌어요:\n$path';
+  }
+
+  @override
+  String calExportFailed(String error) {
+    return '캘린더 내보내기 실패: $error';
+  }
 }

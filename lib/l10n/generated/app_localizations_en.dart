@@ -1019,4 +1019,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deductionModeInsurance => '4 Insurances';
+
+  @override
+  String get calExportTitle => 'Send to Google Calendar';
+
+  @override
+  String get calExportToolbarLabel => 'Share';
+
+  @override
+  String get settingsSectionCalendar => 'Calendar';
+
+  @override
+  String get settingsCalendarExportHint =>
+      'Move shifts via a calendar file (.ics) — no sign-in needed';
+
+  @override
+  String calExportMonthShiftCount(int count) {
+    return '$count shifts this month will become calendar events.';
+  }
+
+  @override
+  String get calExportNoShifts =>
+      'No shifts this month. Pick another month above.';
+
+  @override
+  String get calExportButton => 'Create calendar file (.ics)';
+
+  @override
+  String get calExportFirstTimeTitle => 'First time? Here\'s how it works';
+
+  @override
+  String get calExportFirstTimeBody =>
+      'No Google sign-in or internet connection needed — this creates a standard calendar file (.ics) that any calendar app can read.\nImport the file into Google Calendar and this month\'s shifts appear as events. The same file also works with Apple Calendar and others.';
+
+  @override
+  String get calExportHowToTitle => 'How to import into Google Calendar';
+
+  @override
+  String get calExportHowToMobile =>
+      '📱 Phone\n1. Tap the \'Create calendar file\' button below.\n2. In the share sheet, choose \'Calendar\' or \'Google Calendar\'.\n   (If it\'s not listed, choose \'Save to Files\', then open the saved .ics file from your file manager)\n3. Tap \'Add\' or \'Save\' on the screen that opens — done!';
+
+  @override
+  String get calExportHowToPc =>
+      '💻 Computer\n1. Save the file to your computer.\n2. Go to calendar.google.com → top-right ⚙ (Settings) → \'Import & export\'.\n3. Select the file and click \'Import\' — done!';
+
+  @override
+  String get calExportNotesTitle => 'Good to know';
+
+  @override
+  String get calExportNotesBody =>
+      '• The file contains only job names, work hours, and memos. Wages and pay amounts are never included.\n• Importing the same month twice may create duplicate events. If you edited shifts, delete the previously imported events in Google Calendar before importing again.\n• Changes made in this app are not synced automatically — export the file again for the updated month.';
+
+  @override
+  String get calExportUnknownJob => 'Work';
+
+  @override
+  String calExportSaved(String path) {
+    return 'Calendar file created:\n$path';
+  }
+
+  @override
+  String calExportFailed(String error) {
+    return 'Calendar export failed: $error';
+  }
 }

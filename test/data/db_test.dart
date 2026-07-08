@@ -166,7 +166,8 @@ void main() {
       final repo = await db.appSettingsDao.read();
       expect(repo.id, 1);
       expect(repo.schemaVersion, kCurrentSchemaVersion);
-      expect(repo.locale, 'ko');
+      // '' = 기기 시스템 로케일 따름 (6536a98에서 'ko' 고정 seed 제거).
+      expect(repo.locale, '');
     });
   });
 }
