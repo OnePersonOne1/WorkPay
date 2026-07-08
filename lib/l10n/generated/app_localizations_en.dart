@@ -1057,7 +1057,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calExportHowToMobile =>
-      '📱 Phone\n1. Tap the \'Create calendar file\' button below.\n2. In the share sheet, choose \'Calendar\' or \'Google Calendar\'.\n   (If it\'s not listed, choose \'Save to Files\', then open the saved .ics file from your file manager)\n3. Tap \'Add\' or \'Save\' on the screen that opens — done!';
+      '📱 Phone\n1. Tap the \'Create calendar file\' button below.\n2. Choose \'Open in calendar app\'.\n3. Tap \'Add\' or \'Save\' on the screen that opens — done!\n   (If no calendar app opens, choose \'Save as file\', then tap the saved .ics file in your file manager)';
+
+  @override
+  String get calExportOpenCalendarApp => 'Open in calendar app';
+
+  @override
+  String get calExportOpenCalendarAppDesc =>
+      'Add events directly in Google Calendar and others';
+
+  @override
+  String get calExportSaveToFile => 'Save as file';
+
+  @override
+  String get calExportSaveToFileDesc =>
+      'Save the .ics file to a location you choose';
+
+  @override
+  String get calExportShareOther => 'Share to another app';
+
+  @override
+  String get calExportShareOtherDesc =>
+      'Send the file via email, messenger, etc.';
+
+  @override
+  String get calExportNoCalendarApp =>
+      'No calendar app on this device can open .ics files. Save the file instead, then import it at calendar.google.com on a computer.';
 
   @override
   String get calExportHowToPc =>

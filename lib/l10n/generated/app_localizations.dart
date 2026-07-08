@@ -1919,8 +1919,50 @@ abstract class AppLocalizations {
   /// No description provided for @calExportHowToMobile.
   ///
   /// In ko, this message translates to:
-  /// **'📱 스마트폰\n1. 아래 \'캘린더 파일 만들기\' 버튼을 눌러요.\n2. 공유 목록에서 \'캘린더\' 또는 \'Google 캘린더\'를 선택해요.\n   (목록에 없다면 \'파일에 저장\'을 누른 뒤, 파일 앱에서 저장된 .ics 파일을 눌러 열어요)\n3. 열리는 화면에서 \'추가\' 또는 \'저장\'을 누르면 끝!'**
+  /// **'📱 스마트폰\n1. 아래 \'캘린더 파일 만들기\' 버튼을 눌러요.\n2. \'캘린더 앱으로 열기\'를 선택해요.\n3. 열리는 화면에서 \'추가\' 또는 \'저장\'을 누르면 끝!\n   (캘린더 앱이 안 열리면 \'파일로 저장\'을 누른 뒤, 파일 앱에서 저장한 .ics 파일을 눌러 열어요)'**
   String get calExportHowToMobile;
+
+  /// No description provided for @calExportOpenCalendarApp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캘린더 앱으로 열기'**
+  String get calExportOpenCalendarApp;
+
+  /// No description provided for @calExportOpenCalendarAppDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 캘린더 등에서 바로 일정으로 추가해요'**
+  String get calExportOpenCalendarAppDesc;
+
+  /// No description provided for @calExportSaveToFile.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일로 저장'**
+  String get calExportSaveToFile;
+
+  /// No description provided for @calExportSaveToFileDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'원하는 위치에 .ics 파일을 저장해요'**
+  String get calExportSaveToFileDesc;
+
+  /// No description provided for @calExportShareOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 앱으로 공유'**
+  String get calExportShareOther;
+
+  /// No description provided for @calExportShareOtherDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'메일·메신저 등으로 파일을 보내요'**
+  String get calExportShareOtherDesc;
+
+  /// No description provided for @calExportNoCalendarApp.
+  ///
+  /// In ko, this message translates to:
+  /// **'.ics 파일을 열 수 있는 캘린더 앱이 없어요. \'파일로 저장\' 후 컴퓨터에서 calendar.google.com 가져오기를 이용해 주세요.'**
+  String get calExportNoCalendarApp;
 
   /// No description provided for @calExportHowToPc.
   ///

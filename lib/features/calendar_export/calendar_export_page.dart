@@ -5,8 +5,10 @@ import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -230,11 +232,57 @@ class _CalendarExportPageState extends ConsumerState<CalendarExportPage> {
           'salary_app_${_month.year}-${_month.month.toString().padLeft(2, '0')}.ics';
       final encoded = Uint8List.fromList(utf8.encode(ics));
 
-      // Android/iOS: 공유 시트 (캘린더 앱으로 바로 열기 가능). 데스크톱: 파일 저장.
-      if (Platform.isAndroid || Platform.isIOS) {
-        final dir = await getTemporaryDirectory();
-        final file = File(p.join(dir.path, filename));
-        await file.writeAsBytes(encoded);
+      // Android: 열기/저장/공유 선택 시트. 구글 캘린더는 공유(ACTION_SEND)를 받지
+      // 않고 열기(ACTION_VIEW)만 처리하며, 최신 공유 시트에는 '파일 저장' 항목이
+      // 없는 기기도 있어 세 동작을 직접 제공한다. iOS: 공유 시트. 데스크톱: 저장.
+      if (Platform.isAndroid) {
+        if (!context.mounted) return;
+        final action = await _pickAndroidAction(context);
+        switch (action) {
+          case null:
+            return;
+          case _ExportAction.openCalendar:
+            final file = await _writeTempFile(filename, encoded);
+            final result =
+                await OpenFilex.open(file.path, type: 'text/calendar');
+            if (result.type != ResultType.done) {
+              messenger.showSnackBar(
+                SnackBar(content: Text(l.calExportNoCalendarApp)),
+              );
+            }
+          case _ExportAction.saveFile:
+            final path = await FlutterFileDialog.saveFile(
+              params: SaveFileDialogParams(
+                data: encoded,
+                fileName: filename,
+                mimeTypesFilter: const ['text/calendar'],
+              ),
+            );
+            if (path == null) return;
+            messenger.showSnackBar(
+              SnackBar(content: Text(l.calExportSaved(filename))),
+            );
+          case _ExportAction.share:
+            final file = await _writeTempFile(filename, encoded);
+            final result = await SharePlus.instance.share(
+              ShareParams(
+                subject: filename,
+                files: [
+                  XFile(
+                    file.path,
+                    mimeType: 'text/calendar',
+                    name: filename,
+                  ),
+                ],
+              ),
+            );
+            if (result.status == ShareResultStatus.dismissed) return;
+            messenger.showSnackBar(
+              SnackBar(content: Text(l.calExportSaved(filename))),
+            );
+        }
+      } else if (Platform.isIOS) {
+        final file = await _writeTempFile(filename, encoded);
         final result = await SharePlus.instance.share(
           ShareParams(
             subject: filename,
@@ -270,4 +318,46 @@ class _CalendarExportPageState extends ConsumerState<CalendarExportPage> {
       );
     }
   }
+
+  Future<File> _writeTempFile(String filename, Uint8List bytes) async {
+    final dir = await getTemporaryDirectory();
+    final file = File(p.join(dir.path, filename));
+    await file.writeAsBytes(bytes);
+    return file;
+  }
+
+  Future<_ExportAction?> _pickAndroidAction(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return showModalBottomSheet<_ExportAction>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event),
+              title: Text(l.calExportOpenCalendarApp),
+              subtitle: Text(l.calExportOpenCalendarAppDesc),
+              onTap: () => Navigator.pop(context, _ExportAction.openCalendar),
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: Text(l.calExportSaveToFile),
+              subtitle: Text(l.calExportSaveToFileDesc),
+              onTap: () => Navigator.pop(context, _ExportAction.saveFile),
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: Text(l.calExportShareOther),
+              subtitle: Text(l.calExportShareOtherDesc),
+              onTap: () => Navigator.pop(context, _ExportAction.share),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
+/// 안드로이드에서 .ics 파일을 처리할 방법.
+enum _ExportAction { openCalendar, saveFile, share }
